@@ -1,7 +1,11 @@
 package kz.tcloud.dcinv.ui.navigation
 
+import android.widget.Toast
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -22,8 +26,20 @@ import kz.tcloud.dcinv.ui.scan.ScannerScreen
  * vertical is implemented.
  */
 @Composable
-fun AppNavHost() {
+fun AppNavHost(appViewModel: AppViewModel = hiltViewModel()) {
     val navController = rememberNavController()
+    val context = LocalContext.current
+
+    // Inactivity auto-logout: tokens are already cleared, return to login.
+    LaunchedEffect(Unit) {
+        appViewModel.lockEvents.collect {
+            Toast.makeText(context, "Выход из-за неактивности", Toast.LENGTH_LONG).show()
+            navController.navigate(Routes.LOGIN) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
+
     NavHost(navController = navController, startDestination = Routes.LOGIN) {
         composable(Routes.LOGIN) {
             LoginScreen(
