@@ -2,6 +2,8 @@ package kz.tcloud.dcinv.ui.navigation
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -57,7 +59,16 @@ fun AppNavHost(appViewModel: AppViewModel = hiltViewModel()) {
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
 
     Box(modifier = Modifier.fillMaxSize()) {
-        NavHost(navController = navController, startDestination = Routes.LOGIN) {
+        NavHost(
+            navController = navController,
+            startDestination = Routes.LOGIN,
+            // No default crossfade between screens — it reads as a flash,
+            // especially with the ripple-free, motion-only feedback language.
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None },
+        ) {
         composable(Routes.LOGIN) {
             LoginScreen(
                 onLoggedIn = {
