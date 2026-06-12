@@ -5,7 +5,10 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import dagger.hilt.android.AndroidEntryPoint
@@ -13,6 +16,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kz.tcloud.dcinv.data.auth.InactivityLockManager
+import kz.tcloud.dcinv.data.prefs.ThemeMode
+import kz.tcloud.dcinv.data.prefs.ThemePreferences
 import kz.tcloud.dcinv.ui.navigation.AppNavHost
 import kz.tcloud.dcinv.ui.theme.DcInvTheme
 import javax.inject.Inject
@@ -22,6 +27,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var lockManager: InactivityLockManager
+
+    @Inject
+    lateinit var themePreferences: ThemePreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,7 +52,13 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            DcInvTheme {
+            val themeMode by themePreferences.mode.collectAsStateWithLifecycle()
+            val darkTheme = when (themeMode) {
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+            }
+            DcInvTheme(darkTheme = darkTheme) {
                 AppNavHost()
             }
         }

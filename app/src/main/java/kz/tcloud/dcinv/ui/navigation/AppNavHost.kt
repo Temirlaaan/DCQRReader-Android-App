@@ -1,24 +1,33 @@
 package kz.tcloud.dcinv.ui.navigation
 
 import android.widget.Toast
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import kz.tcloud.dcinv.ui.bind.BindDeviceScreen
+import kz.tcloud.dcinv.ui.components.BottomNavIsland
 import kz.tcloud.dcinv.ui.create.CreateDeviceScreen
 import kz.tcloud.dcinv.ui.edit.EditDeviceScreen
+import kz.tcloud.dcinv.ui.history.HistoryScreen
 import kz.tcloud.dcinv.ui.home.HomeScreen
 import kz.tcloud.dcinv.ui.login.LoginScreen
+import kz.tcloud.dcinv.ui.profile.ProfileScreen
 import kz.tcloud.dcinv.ui.qr.QrResultScreen
 import kz.tcloud.dcinv.ui.scan.ScannerScreen
+import kz.tcloud.dcinv.ui.settings.SettingsScreen
 
 /**
  * Top-level navigation graph. Login -> Home -> Scanner -> QR result.
@@ -40,7 +49,10 @@ fun AppNavHost(appViewModel: AppViewModel = hiltViewModel()) {
         }
     }
 
-    NavHost(navController = navController, startDestination = Routes.LOGIN) {
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        NavHost(navController = navController, startDestination = Routes.LOGIN) {
         composable(Routes.LOGIN) {
             LoginScreen(
                 onLoggedIn = {
@@ -52,14 +64,25 @@ fun AppNavHost(appViewModel: AppViewModel = hiltViewModel()) {
         }
         composable(Routes.HOME) {
             HomeScreen(
-                onScan = { navController.navigate(Routes.SCANNER) },
+                onOpenScan = { qrId -> navController.navigate(Routes.qrResult(qrId)) },
+            )
+        }
+        composable(Routes.HISTORY) {
+            HistoryScreen(
+                onOpenScan = { qrId -> navController.navigate(Routes.qrResult(qrId)) },
+            )
+        }
+        composable(Routes.PROFILE) {
+            ProfileScreen(
                 onSignedOut = {
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(0) { inclusive = true }
                     }
                 },
-                onOpenScan = { qrId -> navController.navigate(Routes.qrResult(qrId)) },
             )
+        }
+        composable(Routes.SETTINGS) {
+            SettingsScreen()
         }
         composable(Routes.SCANNER) {
             ScannerScreen(
@@ -144,6 +167,23 @@ fun AppNavHost(appViewModel: AppViewModel = hiltViewModel()) {
                         ?.savedStateHandle?.set(Routes.RESULT_RELOAD, true)
                     navController.popBackStack()
                 },
+            )
+        }
+        }
+
+        if (currentRoute in Routes.TOP_LEVEL) {
+            BottomNavIsland(
+                currentRoute = currentRoute,
+                onNavigate = { route ->
+                    navController.navigate(route) {
+                        // Standard tab behavior: single copy of each tab, state kept.
+                        popUpTo(Routes.HOME) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onScan = { navController.navigate(Routes.SCANNER) },
+                modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
     }

@@ -29,6 +29,10 @@ class ScanHistory @Inject constructor() {
             ).take(CAP)
     }
 
+    fun clear() {
+        _items.value = emptyList()
+    }
+
     private companion object {
         const val CAP = 10
     }

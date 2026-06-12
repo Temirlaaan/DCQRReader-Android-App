@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -471,22 +472,23 @@ private fun BottomActionBar(onComment: () -> Unit, onEdit: () -> Unit) {
             modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            // Icon-only: the label never fit on narrow screens.
             OutlinedButton(
                 onClick = onComment,
                 shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.weight(1f).height(50.dp),
+                contentPadding = PaddingValues(0.dp),
+                modifier = Modifier.size(50.dp),
             ) {
-                Icon(Icons.Filled.Comment, contentDescription = null, modifier = Modifier.size(18.dp))
-                Text("Comment", modifier = Modifier.padding(start = 6.dp))
+                Icon(Icons.Filled.Comment, contentDescription = "Комментарий", modifier = Modifier.size(20.dp))
             }
             Button(
                 onClick = onEdit,
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                modifier = Modifier.weight(2f).height(50.dp),
+                modifier = Modifier.weight(1f).height(50.dp),
             ) {
                 Icon(Icons.Filled.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
-                Text("Edit Device", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 6.dp))
+                Text("Редактировать", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 6.dp))
             }
         }
     }

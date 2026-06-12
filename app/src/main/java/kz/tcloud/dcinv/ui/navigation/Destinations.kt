@@ -7,7 +7,13 @@ package kz.tcloud.dcinv.ui.navigation
 object Routes {
     const val LOGIN = "login"
     const val HOME = "home"
+    const val HISTORY = "history"
+    const val PROFILE = "profile"
+    const val SETTINGS = "settings"
     const val SCANNER = "scanner"
+
+    /** Top-level destinations that show the bottom-nav island. */
+    val TOP_LEVEL = setOf(HOME, HISTORY, PROFILE, SETTINGS)
 
     const val QR_ARG = "qrId"
     const val QR_RESULT = "qr/{$QR_ARG}"

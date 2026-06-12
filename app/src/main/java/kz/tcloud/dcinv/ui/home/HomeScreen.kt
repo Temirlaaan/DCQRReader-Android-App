@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -21,11 +20,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
-import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.DocumentScanner
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material3.Button
@@ -33,10 +29,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -47,9 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -67,8 +58,6 @@ import kz.tcloud.dcinv.ui.theme.DcInvTheme
 
 @Composable
 fun HomeScreen(
-    onScan: () -> Unit,
-    onSignedOut: () -> Unit,
     onOpenScan: (String) -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
@@ -85,14 +74,7 @@ fun HomeScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            HomeHeader(
-                onSignOut = {
-                    viewModel.signOut()
-                    onSignedOut()
-                },
-            )
-        },
+        topBar = { HomeHeader() },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         LazyColumn(
@@ -111,7 +93,6 @@ fun HomeScreen(
                     onEnd = viewModel::endShift,
                 )
             }
-            item { PrimaryActionCard(onScan = onScan) }
             if (recent.isNotEmpty()) {
                 item {
                     Text(
@@ -125,14 +106,14 @@ fun HomeScreen(
                     RecentScanRow(entry = entry, onClick = { onOpenScan(entry.qrId) })
                 }
             }
-            item { Spacer(Modifier.height(8.dp)) }
+            // Keep the list clear of the floating nav island.
+            item { Spacer(Modifier.height(96.dp)) }
         }
     }
 }
 
 @Composable
-private fun HomeHeader(onSignOut: () -> Unit) {
-    var menuOpen by remember { mutableStateOf(false) }
+private fun HomeHeader() {
     Surface(
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 2.dp,
@@ -155,18 +136,6 @@ private fun HomeHeader(onSignOut: () -> Unit) {
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(start = 10.dp).weight(1f),
             )
-            Box {
-                IconButton(onClick = { menuOpen = true }) {
-                    Icon(Icons.Filled.Menu, contentDescription = "Меню")
-                }
-                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                    DropdownMenuItem(
-                        text = { Text("Выйти") },
-                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null) },
-                        onClick = { menuOpen = false; onSignOut() },
-                    )
-                }
-            }
         }
     }
 }
@@ -245,7 +214,7 @@ private fun ShiftStatusCard(
                     when {
                         loading -> CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                         active -> OutlinedButton(onClick = onEnd, shape = RoundedCornerShape(12.dp)) {
-                            Text("End Shift")
+                            Text("Завершить смену")
                         }
                         else -> Button(
                             onClick = onStart,
@@ -276,60 +245,6 @@ private fun InfoLine(icon: androidx.compose.ui.graphics.vector.ImageVector, text
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-    }
-}
-
-@Composable
-private fun PrimaryActionCard(onScan: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, DcInvTheme.extra.border),
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                modifier = Modifier.size(72.dp),
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Filled.DocumentScanner,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(36.dp),
-                    )
-                }
-            }
-            Text(
-                text = "Scan QR Code",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 16.dp),
-            )
-            Text(
-                text = "Отсканируйте метку оборудования, чтобы открыть карточку",
-                style = MaterialTheme.typography.bodyMedium,
-                color = DcInvTheme.extra.secondaryText,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-            Spacer(Modifier.height(20.dp))
-            Button(
-                onClick = onScan,
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Icon(Icons.Filled.QrCode2, contentDescription = null)
-                Text("Open Scanner", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 8.dp))
-            }
-        }
     }
 }
 
