@@ -58,6 +58,17 @@ fun AppNavHost(appViewModel: AppViewModel = hiltViewModel()) {
         }
     }
 
+    // Keycloak rejected the refresh token (SSO session expired/revoked):
+    // without this the UI would keep firing requests that all die with 401.
+    LaunchedEffect(Unit) {
+        appViewModel.sessionExpiredEvents.collect {
+            Toast.makeText(context, "Сессия истекла. Войдите снова", Toast.LENGTH_LONG).show()
+            navController.navigate(Routes.LOGIN) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
+
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -102,16 +113,9 @@ fun AppNavHost(appViewModel: AppViewModel = hiltViewModel()) {
         composable(
             route = Routes.DEVICE_DETAIL,
             arguments = listOf(navArgument(Routes.DEVICE_ARG) { type = NavType.IntType }),
-        ) { entry ->
-            val reload by entry.savedStateHandle
-                .getStateFlow(Routes.RESULT_RELOAD, false)
-                .collectAsStateWithLifecycle()
-            DeviceDetailScreen(
-                onBack = { navController.popBackStack() },
-                onEdit = { deviceId -> navController.navigate(Routes.editDevice(deviceId)) },
-                reloadSignal = reload,
-                onReloadHandled = { entry.savedStateHandle[Routes.RESULT_RELOAD] = false },
-            )
+        ) {
+            // Read-only by design: editing requires scanning the device's QR.
+            DeviceDetailScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.PROFILE) {
             ProfileScreen(

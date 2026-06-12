@@ -3,8 +3,11 @@ package kz.tcloud.dcinv.data.auth
 import android.content.Intent
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabColorSchemeParams
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
@@ -39,6 +42,13 @@ class AuthManager @Inject constructor(
 ) {
     private val _state = MutableStateFlow(stateStore.read())
     val state: StateFlow<AuthState> = _state.asStateFlow()
+
+    /**
+     * Fired when Keycloak rejects the refresh token (SSO session expired or
+     * revoked) — the session is dead, tokens are cleared, UI must re-login.
+     */
+    private val _sessionExpired = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val sessionExpired: SharedFlow<Unit> = _sessionExpired.asSharedFlow()
 
     private val refreshMutex = Mutex()
 
@@ -99,8 +109,9 @@ class AuthManager @Inject constructor(
     suspend fun freshAccessToken(): String? = refreshMutex.withLock {
         suspendCancellableCoroutine { cont ->
             val state = _state.value
-            state.performActionWithFreshTokens(authService) { accessToken, _, _ ->
+            state.performActionWithFreshTokens(authService) { accessToken, _, ex ->
                 persist(state)
+                handleRefreshFailure(ex)
                 cont.resume(accessToken)
             }
         }
@@ -119,10 +130,22 @@ class AuthManager @Inject constructor(
 
         state.needsTokenRefresh = true
         suspendCancellableCoroutine<String?> { cont ->
-            state.performActionWithFreshTokens(authService) { accessToken, _, _ ->
+            state.performActionWithFreshTokens(authService) { accessToken, _, ex ->
                 persist(state)
+                handleRefreshFailure(ex)
                 cont.resume(accessToken)
             }
+        }
+    }
+
+    /**
+     * Only a server-side rejection of the refresh token kills the session;
+     * transient failures (network down mid-refresh) must NOT log the user out.
+     */
+    private fun handleRefreshFailure(ex: AuthorizationException?) {
+        if (ex != null && ex.type == AuthorizationException.TYPE_OAUTH_TOKEN_ERROR) {
+            signOut()
+            _sessionExpired.tryEmit(Unit)
         }
     }
 

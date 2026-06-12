@@ -1,11 +1,15 @@
 package kz.tcloud.dcinv.ui.device
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -13,11 +17,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -84,20 +88,9 @@ class DeviceDetailViewModel @Inject constructor(
 @Composable
 fun DeviceDetailScreen(
     onBack: () -> Unit,
-    onEdit: (deviceId: Int) -> Unit,
-    reloadSignal: Boolean = false,
-    onReloadHandled: () -> Unit = {},
     viewModel: DeviceDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-
-    // Refresh after the edit screen reports a save.
-    LaunchedEffect(reloadSignal) {
-        if (reloadSignal) {
-            viewModel.load()
-            onReloadHandled()
-        }
-    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -114,16 +107,37 @@ fun DeviceDetailScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
                     }
                 },
-                actions = {
-                    IconButton(onClick = { onEdit(viewModel.deviceId) }) {
-                        Icon(Icons.Filled.Edit, contentDescription = "Редактировать")
-                    }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface,
                     titleContentColor = MaterialTheme.colorScheme.onSurface,
                 ),
             )
+        },
+        bottomBar = {
+            // Browsing is read-only by design: edits must go through a QR scan
+            // at the physical device, so records can't drift from reality.
+            Surface(color = MaterialTheme.colorScheme.surface, shadowElevation = 12.dp) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                ) {
+                    Icon(
+                        Icons.Filled.QrCodeScanner,
+                        contentDescription = null,
+                        tint = DcInvTheme.extra.accent,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Text(
+                        "Просмотр. Чтобы изменить устройство, отсканируйте его QR-метку.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = DcInvTheme.extra.secondaryText,
+                        modifier = Modifier.padding(start = 10.dp),
+                    )
+                }
+            }
         },
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
