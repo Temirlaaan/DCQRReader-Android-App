@@ -7,13 +7,17 @@ package kz.tcloud.dcinv.ui.navigation
 object Routes {
     const val LOGIN = "login"
     const val HOME = "home"
-    const val HISTORY = "history"
+    const val RACKS = "racks"
     const val PROFILE = "profile"
     const val SETTINGS = "settings"
     const val SCANNER = "scanner"
 
     /** Top-level destinations that show the bottom-nav island. */
-    val TOP_LEVEL = setOf(HOME, HISTORY, PROFILE, SETTINGS)
+    val TOP_LEVEL = setOf(HOME, RACKS, PROFILE, SETTINGS)
+
+    const val RACK_ARG = "rackId"
+    const val RACK_DETAIL = "rack/{$RACK_ARG}"
+    fun rackDetail(rackId: Int): String = "rack/$rackId"
 
     const val QR_ARG = "qrId"
     const val QR_RESULT = "qr/{$QR_ARG}"
@@ -29,6 +33,9 @@ object Routes {
     const val DEVICE_ARG = "deviceId"
     const val EDIT_DEVICE = "device/{$DEVICE_ARG}/edit"
     fun editDevice(deviceId: Int): String = "device/$deviceId/edit"
+
+    const val DEVICE_DETAIL = "device/{$DEVICE_ARG}"
+    fun deviceDetail(deviceId: Int): String = "device/$deviceId"
 
     /** savedStateHandle key: edit screen → QR result screen "please reload". */
     const val RESULT_RELOAD = "result_reload"

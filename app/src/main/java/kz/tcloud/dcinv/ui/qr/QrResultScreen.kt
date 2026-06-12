@@ -1,12 +1,10 @@
 package kz.tcloud.dcinv.ui.qr
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,20 +17,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Comment
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Lan
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -57,18 +48,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kz.tcloud.dcinv.data.network.dto.DeviceData
-import kz.tcloud.dcinv.data.network.dto.QrInfo
 import kz.tcloud.dcinv.data.network.dto.QrLookupResponse
 import kz.tcloud.dcinv.data.network.dto.QrStatus
 import kz.tcloud.dcinv.ui.common.ShiftRequiredDialog
+import kz.tcloud.dcinv.ui.device.DeviceProfile
+import kz.tcloud.dcinv.ui.device.SectionCard
 import kz.tcloud.dcinv.ui.theme.DcInvTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -320,148 +309,6 @@ private fun FreeQr(onBind: () -> Unit, onCreate: () -> Unit) {
             Icon(Icons.Filled.AddCircle, contentDescription = null, modifier = Modifier.size(18.dp))
             Text("Создать новое устройство", modifier = Modifier.padding(start = 6.dp))
         }
-    }
-}
-
-@Composable
-private fun DeviceProfile(device: DeviceData?) {
-    if (device == null) {
-        CenteredInfo(title = "Устройство недоступно", body = "QR привязан, но данные устройства не получены.")
-        return
-    }
-    Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        // Data header: name + status chip.
-        Column {
-            Text(device.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            device.deviceType?.let {
-                Text(it.name, style = MaterialTheme.typography.bodyMedium, color = DcInvTheme.extra.secondaryText)
-            }
-            Spacer(Modifier.height(8.dp))
-            StatusChip(device.status.label)
-        }
-
-        SectionCard(title = "Location", icon = Icons.Filled.LocationOn) {
-            KvGrid(
-                "Площадка" to device.site.name,
-                "Стойка" to (device.rack?.name ?: "—"),
-                "Позиция" to (device.position?.let { "U$it" } ?: "—"),
-                "Высота" to (device.uHeight?.let { "${it}U" } ?: "—"),
-            )
-        }
-
-        SectionCard(title = "Hardware", icon = Icons.Filled.Memory) {
-            KvGrid(
-                "Серийный №" to device.serial.ifBlank { "—" },
-                "Инв. номер" to (device.assetTag ?: "—"),
-                "Производитель" to (device.manufacturer?.name ?: "—"),
-                "Роль" to (device.deviceRole?.name ?: "—"),
-            )
-        }
-
-        SectionCard(title = "Network", icon = Icons.Filled.Lan) {
-            KvGrid(
-                "Primary IPv4" to (device.primaryIp4 ?: "—"),
-                "Primary IPv6" to (device.primaryIp6 ?: "—"),
-            )
-        }
-
-        device.comments.takeIf { it.isNotBlank() }?.let {
-            SectionCard(title = "Comments", icon = Icons.Filled.Comment) {
-                Text(it, style = MaterialTheme.typography.bodyMedium)
-            }
-        }
-
-        // Leave space above the fixed bottom bar.
-        Spacer(Modifier.height(72.dp))
-    }
-}
-
-@Composable
-private fun StatusChip(label: String) {
-    Surface(
-        shape = RoundedCornerShape(50),
-        color = DcInvTheme.extra.accent.copy(alpha = 0.12f),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                Icons.Filled.CheckCircle,
-                contentDescription = null,
-                tint = DcInvTheme.extra.accent,
-                modifier = Modifier.size(16.dp),
-            )
-            Text(
-                label,
-                color = DcInvTheme.extra.accent,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(start = 4.dp),
-            )
-        }
-    }
-}
-
-@Composable
-private fun SectionCard(title: String, icon: ImageVector, content: @Composable () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        border = BorderStroke(1.dp, DcInvTheme.extra.border),
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(icon, contentDescription = null, tint = DcInvTheme.extra.accent, modifier = Modifier.size(18.dp))
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 8.dp),
-                )
-            }
-            Spacer(Modifier.height(12.dp))
-            content()
-        }
-    }
-}
-
-/** Two-column key/value grid. */
-@Composable
-private fun KvGrid(vararg pairs: Pair<String, String>) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        pairs.toList().chunked(2).forEach { row ->
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                row.forEach { (k, v) ->
-                    KvItem(k, v, modifier = Modifier.weight(1f))
-                }
-                if (row.size == 1) Spacer(Modifier.weight(1f))
-            }
-        }
-    }
-}
-
-@Composable
-private fun KvItem(key: String, value: String, modifier: Modifier = Modifier) {
-    Column(modifier = modifier) {
-        Text(
-            text = key.uppercase(),
-            style = MaterialTheme.typography.labelSmall,
-            color = DcInvTheme.extra.secondaryText,
-            fontSize = 10.sp,
-            letterSpacing = 0.5.sp,
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(top = 2.dp),
-        )
     }
 }
 

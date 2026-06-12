@@ -25,7 +25,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
@@ -52,7 +52,7 @@ private data class IslandItem(val route: String, val icon: ImageVector, val labe
 
 private val LeftItems = listOf(
     IslandItem(Routes.HOME, Icons.Filled.Home, "Главная"),
-    IslandItem(Routes.HISTORY, Icons.Filled.History, "История"),
+    IslandItem(Routes.RACKS, Icons.Filled.Dns, "Стойки"),
 )
 private val RightItems = listOf(
     IslandItem(Routes.PROFILE, Icons.Filled.Person, "Профиль"),

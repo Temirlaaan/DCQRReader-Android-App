@@ -27,12 +27,14 @@ import androidx.navigation.navArgument
 import kz.tcloud.dcinv.ui.bind.BindDeviceScreen
 import kz.tcloud.dcinv.ui.components.BottomNavIsland
 import kz.tcloud.dcinv.ui.create.CreateDeviceScreen
+import kz.tcloud.dcinv.ui.device.DeviceDetailScreen
 import kz.tcloud.dcinv.ui.edit.EditDeviceScreen
-import kz.tcloud.dcinv.ui.history.HistoryScreen
 import kz.tcloud.dcinv.ui.home.HomeScreen
 import kz.tcloud.dcinv.ui.login.LoginScreen
 import kz.tcloud.dcinv.ui.profile.ProfileScreen
 import kz.tcloud.dcinv.ui.qr.QrResultScreen
+import kz.tcloud.dcinv.ui.racks.RackDetailScreen
+import kz.tcloud.dcinv.ui.racks.RacksScreen
 import kz.tcloud.dcinv.ui.scan.ScannerScreen
 import kz.tcloud.dcinv.ui.settings.SettingsScreen
 
@@ -83,9 +85,32 @@ fun AppNavHost(appViewModel: AppViewModel = hiltViewModel()) {
                 onOpenScan = { qrId -> navController.navigate(Routes.qrResult(qrId)) },
             )
         }
-        composable(Routes.HISTORY) {
-            HistoryScreen(
-                onOpenScan = { qrId -> navController.navigate(Routes.qrResult(qrId)) },
+        composable(Routes.RACKS) {
+            RacksScreen(
+                onOpenRack = { rackId -> navController.navigate(Routes.rackDetail(rackId)) },
+            )
+        }
+        composable(
+            route = Routes.RACK_DETAIL,
+            arguments = listOf(navArgument(Routes.RACK_ARG) { type = NavType.IntType }),
+        ) {
+            RackDetailScreen(
+                onBack = { navController.popBackStack() },
+                onOpenDevice = { deviceId -> navController.navigate(Routes.deviceDetail(deviceId)) },
+            )
+        }
+        composable(
+            route = Routes.DEVICE_DETAIL,
+            arguments = listOf(navArgument(Routes.DEVICE_ARG) { type = NavType.IntType }),
+        ) { entry ->
+            val reload by entry.savedStateHandle
+                .getStateFlow(Routes.RESULT_RELOAD, false)
+                .collectAsStateWithLifecycle()
+            DeviceDetailScreen(
+                onBack = { navController.popBackStack() },
+                onEdit = { deviceId -> navController.navigate(Routes.editDevice(deviceId)) },
+                reloadSignal = reload,
+                onReloadHandled = { entry.savedStateHandle[Routes.RESULT_RELOAD] = false },
             )
         }
         composable(Routes.PROFILE) {
