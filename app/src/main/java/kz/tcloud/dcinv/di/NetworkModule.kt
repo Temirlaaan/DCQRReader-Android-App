@@ -41,15 +41,23 @@ object NetworkModule {
     }
 
     /**
-     * TLS certificate pinning (ToR §5.4.1). Pins are intentionally empty for now —
-     * an empty pinner is a no-op. Add the current + next corporate cert pins here
-     * before production rollout to enable seamless rotation.
+     * TLS certificate pinning (ToR §5.4.1). Pins are the Sectigo CA keys, not the
+     * leaf: the leaf (`*.t-cloud.kz`, DV) is reissued yearly and its key may
+     * rotate, while the intermediate (DV R36, valid to 2036) and root (R46, to
+     * 2038) survive renewals as long as certs keep coming from Sectigo. OkHttp
+     * accepts the chain when ANY pinned key appears in it. If the company ever
+     * switches CA vendors, these pins must be updated in the same release.
+     *
+     * Re-derive a pin: openssl s_client -connect host:443 -showcerts, then per
+     * cert: x509 -pubkey | pkey -pubin -outform der | dgst -sha256 -binary | base64
      */
     @Provides
     @Singleton
     fun provideCertificatePinner(): CertificatePinner = CertificatePinner.Builder()
-        // .add("qr.dc.t-cloud.kz", "sha256/CURRENT_CERT_PIN=")
-        // .add("qr.dc.t-cloud.kz", "sha256/NEXT_CERT_PIN=")
+        // Sectigo Public Server Authentication CA DV R36 (intermediate)
+        .add("qr-dc.t-cloud.kz", "sha256/a9khLOZJxlnJyrxstg/P+seiDCm+Yf3OsrXyFocBaI0=")
+        // Sectigo Public Server Authentication Root R46 (backup)
+        .add("qr-dc.t-cloud.kz", "sha256/Douxi77vs4G+Ib/BogbTFymEYq0QSFXwSgVCaZcI09Q=")
         .build()
 
     @Provides
