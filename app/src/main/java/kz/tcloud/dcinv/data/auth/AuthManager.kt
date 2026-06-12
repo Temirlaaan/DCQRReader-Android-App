@@ -106,6 +106,26 @@ class AuthManager @Inject constructor(
         }
     }
 
+    /**
+     * Force-refresh after a 401: the server rejected a token that looked valid
+     * locally (clock skew, revoked session). If a concurrent request already
+     * refreshed — the stored token no longer matches [staleAccessToken] — the
+     * stored one is returned without burning another refresh.
+     */
+    suspend fun refreshedAccessToken(staleAccessToken: String?): String? = refreshMutex.withLock {
+        val state = _state.value
+        val current = state.accessToken
+        if (current != null && current != staleAccessToken) return@withLock current
+
+        state.needsTokenRefresh = true
+        suspendCancellableCoroutine<String?> { cont ->
+            state.performActionWithFreshTokens(authService) { accessToken, _, _ ->
+                persist(state)
+                cont.resume(accessToken)
+            }
+        }
+    }
+
     fun signOut() {
         persist(AuthState(serviceConfig))
         stateStore.clear()

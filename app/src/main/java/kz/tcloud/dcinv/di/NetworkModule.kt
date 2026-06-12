@@ -15,6 +15,7 @@ import kz.tcloud.dcinv.data.network.api.SessionApi
 import kz.tcloud.dcinv.data.network.api.SystemApi
 import kz.tcloud.dcinv.data.network.interceptor.AuthInterceptor
 import kz.tcloud.dcinv.data.network.interceptor.RequestIdInterceptor
+import kz.tcloud.dcinv.data.network.interceptor.TokenAuthenticator
 import okhttp3.CertificatePinner
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -65,12 +66,15 @@ object NetworkModule {
     fun provideOkHttpClient(
         authInterceptor: AuthInterceptor,
         requestIdInterceptor: RequestIdInterceptor,
+        tokenAuthenticator: TokenAuthenticator,
         certificatePinner: CertificatePinner,
     ): OkHttpClient {
         val builder = OkHttpClient.Builder()
             .certificatePinner(certificatePinner)
             .addInterceptor(requestIdInterceptor)
             .addInterceptor(authInterceptor)
+            // 401 → force-refresh the token and retry the request once.
+            .authenticator(tokenAuthenticator)
             .connectTimeout(10, TimeUnit.SECONDS)
             .readTimeout(15, TimeUnit.SECONDS)
             .writeTimeout(15, TimeUnit.SECONDS)
