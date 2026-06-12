@@ -1,6 +1,11 @@
 package kz.tcloud.dcinv.ui.navigation
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -171,7 +176,12 @@ fun AppNavHost(appViewModel: AppViewModel = hiltViewModel()) {
         }
         }
 
-        if (currentRoute in Routes.TOP_LEVEL) {
+        AnimatedVisibility(
+            visible = currentRoute in Routes.TOP_LEVEL,
+            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+            modifier = Modifier.align(Alignment.BottomCenter),
+        ) {
             BottomNavIsland(
                 currentRoute = currentRoute,
                 onNavigate = { route ->
@@ -183,7 +193,6 @@ fun AppNavHost(appViewModel: AppViewModel = hiltViewModel()) {
                     }
                 },
                 onScan = { navController.navigate(Routes.SCANNER) },
-                modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
     }
