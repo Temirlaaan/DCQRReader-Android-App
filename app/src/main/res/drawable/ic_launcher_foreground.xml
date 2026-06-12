@@ -1,0 +1,9 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#FFFFFF" android:fillType="evenOdd" android:pathData="M30.0,30.0 h20.0 v20.0 h-20.0 z M34.0,34.0 h12.0 v12.0 h-12.0 z" />
+    <path android:fillColor="#FFFFFF" android:fillType="evenOdd" android:pathData="M58.0,30.0 h20.0 v20.0 h-20.0 z M62.0,34.0 h12.0 v12.0 h-12.0 z" />
+    <path android:fillColor="#FFFFFF" android:fillType="evenOdd" android:pathData="M30.0,58.0 h20.0 v20.0 h-20.0 z M34.0,62.0 h12.0 v12.0 h-12.0 z" />
+    <path android:fillColor="#2BB673" android:pathData="M38.0,38.0 h4.0 v4.0 h-4.0 z M66.0,38.0 h4.0 v4.0 h-4.0 z M38.0,66.0 h4.0 v4.0 h-4.0 z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M58.0,58.0 h4.0 v4.0 h-4.0 z M66.0,58.0 h4.0 v4.0 h-4.0 z M74.0,58.0 h4.0 v4.0 h-4.0 z M62.0,62.0 h4.0 v4.0 h-4.0 z M70.0,62.0 h4.0 v4.0 h-4.0 z M58.0,66.0 h4.0 v4.0 h-4.0 z M66.0,66.0 h4.0 v4.0 h-4.0 z M74.0,66.0 h4.0 v4.0 h-4.0 z M70.0,70.0 h4.0 v4.0 h-4.0 z M62.0,70.0 h4.0 v4.0 h-4.0 z M58.0,74.0 h4.0 v4.0 h-4.0 z M66.0,74.0 h4.0 v4.0 h-4.0 z M74.0,74.0 h4.0 v4.0 h-4.0 z M54.0,30.0 h4.0 v4.0 h-4.0 z M54.0,38.0 h4.0 v4.0 h-4.0 z M54.0,46.0 h4.0 v4.0 h-4.0 z M30.0,54.0 h4.0 v4.0 h-4.0 z M38.0,54.0 h4.0 v4.0 h-4.0 z M46.0,54.0 h4.0 v4.0 h-4.0 z M54.0,54.0 h4.0 v4.0 h-4.0 z M70.0,38.0 h4.0 v4.0 h-4.0 z M38.0,70.0 h4.0 v4.0 h-4.0 z" />
+</vector>
