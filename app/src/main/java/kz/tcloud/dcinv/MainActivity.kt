@@ -1,6 +1,7 @@
 package kz.tcloud.dcinv
 
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -70,6 +71,11 @@ class MainActivity : ComponentActivity() {
                     statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { darkTheme },
                     navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { darkTheme },
                 )
+                // Android 10+ otherwise draws its own contrast scrim behind the
+                // nav bar (the "black rectangle"), even when it's transparent.
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    window.isNavigationBarContrastEnforced = false
+                }
                 onDispose {}
             }
 
