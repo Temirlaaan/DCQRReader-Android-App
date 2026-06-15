@@ -1,11 +1,14 @@
 package kz.tcloud.dcinv
 
+import android.graphics.Color
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -38,7 +41,6 @@ class MainActivity : ComponentActivity() {
             WindowManager.LayoutParams.FLAG_SECURE,
             WindowManager.LayoutParams.FLAG_SECURE,
         )
-        enableEdgeToEdge()
 
         // Inactivity auto-logout: tick while visible; the first check after
         // returning from the background catches long idle gaps immediately.
@@ -58,6 +60,19 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.LIGHT -> false
                 ThemeMode.DARK -> true
             }
+
+            // Drive edge-to-edge from the IN-APP theme, not the system one:
+            // otherwise a light app under a dark system theme gets a dark
+            // navigation-bar scrim that reads as black behind the nav island.
+            // Transparent scrims = no overlay; detectDarkMode only sets icon color.
+            DisposableEffect(darkTheme) {
+                enableEdgeToEdge(
+                    statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { darkTheme },
+                    navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { darkTheme },
+                )
+                onDispose {}
+            }
+
             DcInvTheme(darkTheme = darkTheme) {
                 AppNavHost()
             }
