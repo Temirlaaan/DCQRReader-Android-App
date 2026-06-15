@@ -4,6 +4,7 @@ import kz.tcloud.dcinv.data.network.ApiCaller
 import kz.tcloud.dcinv.data.network.api.QrApi
 import kz.tcloud.dcinv.data.network.dto.QrBindRequest
 import kz.tcloud.dcinv.data.network.dto.QrLookupResponse
+import kz.tcloud.dcinv.data.network.dto.QrRebindRequest
 import kz.tcloud.dcinv.data.network.idempotency.IdempotencyStore
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -23,6 +24,18 @@ class QrRepository @Inject constructor(
                 qrApi.bind(
                     qrId = qrId,
                     body = QrBindRequest(deviceId = deviceId, version = version),
+                    idempotencyKey = key,
+                )
+            }
+        }
+
+    /** Move a bound QR to [deviceId]; [version] is the new device's last_updated. */
+    suspend fun rebind(qrId: String, deviceId: Int, version: String, reason: String): QrLookupResponse =
+        idempotency.withKey("rebind:$qrId:$deviceId") { key ->
+            apiCaller.call {
+                qrApi.rebind(
+                    qrId = qrId,
+                    body = QrRebindRequest(deviceId = deviceId, version = version, reason = reason),
                     idempotencyKey = key,
                 )
             }

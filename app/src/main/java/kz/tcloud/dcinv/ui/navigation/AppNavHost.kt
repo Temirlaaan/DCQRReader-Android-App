@@ -33,6 +33,7 @@ import kz.tcloud.dcinv.ui.home.HomeScreen
 import kz.tcloud.dcinv.ui.login.LoginScreen
 import kz.tcloud.dcinv.ui.profile.ProfileScreen
 import kz.tcloud.dcinv.ui.qr.QrResultScreen
+import kz.tcloud.dcinv.ui.rebind.RebindDeviceScreen
 import kz.tcloud.dcinv.ui.racks.RackDetailScreen
 import kz.tcloud.dcinv.ui.racks.RacksScreen
 import kz.tcloud.dcinv.ui.scan.ScannerScreen
@@ -163,6 +164,7 @@ fun AppNavHost(appViewModel: AppViewModel = hiltViewModel()) {
                 },
                 onBind = { qrId -> navController.navigate(Routes.bind(qrId)) },
                 onCreate = { qrId -> navController.navigate(Routes.createDevice(qrId)) },
+                onRebind = { qrId -> navController.navigate(Routes.rebind(qrId)) },
                 onEdit = { deviceId -> navController.navigate(Routes.editDevice(deviceId)) },
                 reloadSignal = reload,
                 onReloadHandled = { entry.savedStateHandle[Routes.RESULT_RELOAD] = false },
@@ -178,6 +180,22 @@ fun AppNavHost(appViewModel: AppViewModel = hiltViewModel()) {
                 onBound = {
                     // Replace bind + the stale (free) result with a fresh lookup
                     // that now shows the bound device.
+                    navController.navigate(Routes.qrResult(qrId)) {
+                        popUpTo(Routes.QR_RESULT) { inclusive = true }
+                    }
+                },
+            )
+        }
+        composable(
+            route = Routes.REBIND,
+            arguments = listOf(navArgument(Routes.QR_ARG) { type = NavType.StringType }),
+        ) { entry ->
+            val qrId = entry.arguments?.getString(Routes.QR_ARG).orEmpty()
+            RebindDeviceScreen(
+                onBack = { navController.popBackStack() },
+                onDone = {
+                    // Replace rebind + the stale result with a fresh lookup
+                    // that now shows the newly bound device.
                     navController.navigate(Routes.qrResult(qrId)) {
                         popUpTo(Routes.QR_RESULT) { inclusive = true }
                     }

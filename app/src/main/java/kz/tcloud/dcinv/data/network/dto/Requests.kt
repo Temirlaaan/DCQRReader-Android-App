@@ -9,6 +9,14 @@ data class QrBindRequest(
     val version: String,
 )
 
+/** Move a bound QR to another device. `reason` is mandatory (audited). */
+@Serializable
+data class QrRebindRequest(
+    val deviceId: Int,
+    val version: String,
+    val reason: String,
+)
+
 @Serializable
 data class AddCommentRequest(val comment: String)
 

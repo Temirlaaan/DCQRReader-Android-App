@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -67,6 +68,7 @@ fun QrResultScreen(
     onScanAgain: () -> Unit,
     onBind: (qrId: String) -> Unit,
     onCreate: (qrId: String) -> Unit,
+    onRebind: (qrId: String) -> Unit,
     onEdit: (deviceId: Int) -> Unit,
     reloadSignal: Boolean = false,
     onReloadHandled: () -> Unit = {},
@@ -119,6 +121,11 @@ fun QrResultScreen(
                                 onClick = { menuOpen = false; onScanAgain() },
                             )
                             if (isBound) {
+                                DropdownMenuItem(
+                                    text = { Text("Перепривязать метку") },
+                                    leadingIcon = { Icon(Icons.Filled.SwapHoriz, contentDescription = null) },
+                                    onClick = { menuOpen = false; onRebind(viewModel.qrId) },
+                                )
                                 DropdownMenuItem(
                                     text = { Text("Списать устройство", color = MaterialTheme.colorScheme.error) },
                                     leadingIcon = {

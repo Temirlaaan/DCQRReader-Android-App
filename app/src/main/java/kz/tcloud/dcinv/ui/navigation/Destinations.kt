@@ -27,6 +27,9 @@ object Routes {
     const val BIND = "bind/{$QR_ARG}"
     fun bind(qrId: String): String = "bind/$qrId"
 
+    const val REBIND = "rebind/{$QR_ARG}"
+    fun rebind(qrId: String): String = "rebind/$qrId"
+
     const val CREATE_DEVICE = "qr/{$QR_ARG}/create"
     fun createDevice(qrId: String): String = "qr/$qrId/create"
 
