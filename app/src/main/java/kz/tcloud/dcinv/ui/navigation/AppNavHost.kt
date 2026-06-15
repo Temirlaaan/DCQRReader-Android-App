@@ -118,7 +118,10 @@ fun AppNavHost(appViewModel: AppViewModel = hiltViewModel()) {
             arguments = listOf(navArgument(Routes.DEVICE_ARG) { type = NavType.IntType }),
         ) {
             // Read-only by design: editing requires scanning the device's QR.
-            DeviceDetailScreen(onBack = { navController.popBackStack() })
+            DeviceDetailScreen(
+                onBack = { navController.popBackStack() },
+                onScan = { navController.navigate(Routes.SCANNER) },
+            )
         }
         composable(Routes.PROFILE) {
             ProfileScreen(

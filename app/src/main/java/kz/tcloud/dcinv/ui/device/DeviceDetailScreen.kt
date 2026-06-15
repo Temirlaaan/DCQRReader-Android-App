@@ -88,6 +88,7 @@ class DeviceDetailViewModel @Inject constructor(
 @Composable
 fun DeviceDetailScreen(
     onBack: () -> Unit,
+    onScan: () -> Unit,
     viewModel: DeviceDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -105,6 +106,11 @@ fun DeviceDetailScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onScan) {
+                        Icon(Icons.Filled.QrCodeScanner, contentDescription = "Сканировать")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

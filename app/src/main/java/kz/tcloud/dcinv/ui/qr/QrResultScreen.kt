@@ -110,17 +110,16 @@ fun QrResultScreen(
                     }
                 },
                 actions = {
-                    Box {
-                        IconButton(onClick = { menuOpen = true }) {
-                            Icon(Icons.Filled.MoreVert, contentDescription = "Ещё")
-                        }
-                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                            DropdownMenuItem(
-                                text = { Text("Сканировать ещё") },
-                                leadingIcon = { Icon(Icons.Filled.QrCodeScanner, contentDescription = null) },
-                                onClick = { menuOpen = false; onScanAgain() },
-                            )
-                            if (isBound) {
+                    IconButton(onClick = onScanAgain) {
+                        Icon(Icons.Filled.QrCodeScanner, contentDescription = "Сканировать")
+                    }
+                    // Overflow only carries bound-device actions; hide it otherwise.
+                    if (isBound) {
+                        Box {
+                            IconButton(onClick = { menuOpen = true }) {
+                                Icon(Icons.Filled.MoreVert, contentDescription = "Ещё")
+                            }
+                            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                                 DropdownMenuItem(
                                     text = { Text("Перепривязать метку") },
                                     leadingIcon = { Icon(Icons.Filled.SwapHoriz, contentDescription = null) },

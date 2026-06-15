@@ -41,7 +41,7 @@ class RacksViewModel @Inject constructor(
             try {
                 val sites = metaRepository.sites()
                 val siteId = _state.value.selectedSiteId ?: sites.firstOrNull()?.id
-                val racks = siteId?.let { metaRepository.racks(it) }.orEmpty()
+                val racks = siteId?.let { metaRepository.racks(it).forSite(it) }.orEmpty()
                 _state.update {
                     it.copy(loading = false, sites = sites, selectedSiteId = siteId, racks = racks)
                 }
@@ -61,7 +61,7 @@ class RacksViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(loading = true, error = null) }
             try {
-                val racks = metaRepository.racks(siteId)
+                val racks = metaRepository.racks(siteId).forSite(siteId)
                 _state.update { it.copy(loading = false, racks = racks) }
             } catch (e: ApiException) {
                 _state.update { it.copy(loading = false, error = e.userMessage()) }
@@ -75,4 +75,10 @@ class RacksViewModel @Inject constructor(
 
     private fun ApiException.userMessage(): String =
         apiError?.userMessage ?: apiError?.message ?: message ?: "Ошибка"
+
+    /**
+     * Defensive site filter: the backend's `/meta/racks?site_id=` returned racks
+     * from other sites, so we also filter client-side by [MetaRack.siteId].
+     */
+    private fun List<MetaRack>.forSite(siteId: Int) = filter { it.siteId == siteId }
 }
