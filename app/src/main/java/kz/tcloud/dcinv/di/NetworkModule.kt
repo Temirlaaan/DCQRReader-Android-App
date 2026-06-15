@@ -11,6 +11,7 @@ import kz.tcloud.dcinv.BuildConfig
 import kz.tcloud.dcinv.data.network.api.DeviceApi
 import kz.tcloud.dcinv.data.network.api.MetaApi
 import kz.tcloud.dcinv.data.network.api.QrApi
+import kz.tcloud.dcinv.data.network.api.RackApi
 import kz.tcloud.dcinv.data.network.api.SessionApi
 import kz.tcloud.dcinv.data.network.api.SystemApi
 import kz.tcloud.dcinv.data.network.interceptor.AuthInterceptor
@@ -120,4 +121,8 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideMetaApi(retrofit: Retrofit): MetaApi = retrofit.create()
+
+    @Provides
+    @Singleton
+    fun provideRackApi(retrofit: Retrofit): RackApi = retrofit.create()
 }

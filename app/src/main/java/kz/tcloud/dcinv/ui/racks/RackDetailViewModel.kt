@@ -10,17 +10,21 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kz.tcloud.dcinv.data.network.ApiException
-import kz.tcloud.dcinv.data.network.dto.DeviceData
-import kz.tcloud.dcinv.data.repository.DeviceRepository
-import kz.tcloud.dcinv.data.repository.MetaRepository
+import kz.tcloud.dcinv.data.network.dto.ElevationDevice
+import kz.tcloud.dcinv.data.network.dto.RackElevationResponse
+import kz.tcloud.dcinv.data.repository.RackRepository
 import kotlin.coroutines.cancellation.CancellationException
 import javax.inject.Inject
 
+enum class RackFace(val api: String, val label: String) {
+    FRONT("front", "Перёд"),
+    REAR("rear", "Зад"),
+}
+
 /** One visual row of the elevation, top-to-bottom. */
 sealed interface RackRowItem {
-    /** A device block spanning [span] units, [topUnit] is its highest U. */
-    data class DeviceBlock(val device: DeviceData, val topUnit: Int, val span: Int) : RackRowItem
-
+    data class DeviceBlock(val device: ElevationDevice, val topUnit: Int, val span: Int) : RackRowItem
+    data class ReservedUnit(val unit: Int, val description: String?) : RackRowItem
     data class FreeUnit(val unit: Int) : RackRowItem
 }
 
@@ -30,20 +34,20 @@ data class RackDetailUiState(
     val rackName: String = "",
     val uHeight: Int = 0,
     val occupiedUnits: Int = 0,
+    val unpositionedCount: Int = 0,
+    val face: RackFace = RackFace.FRONT,
+    val hasRear: Boolean = false,
     val rows: List<RackRowItem> = emptyList(),
-    /** Devices assigned to the rack but without a mounted position. */
-    val unplaced: List<DeviceData> = emptyList(),
 )
 
 /**
- * Phase-1 rack elevation built from `GET /devices/search?rack=N` (no dedicated
- * backend endpoint yet, so faces/reservations are not represented; a device
- * with unknown height renders as 1U).
+ * Rack elevation from `GET /racks/{id}/elevation` (phase 2): faces, reservations
+ * and device heights come straight from the backend. The face toggle re-projects
+ * the cached response without a refetch.
  */
 @HiltViewModel
 class RackDetailViewModel @Inject constructor(
-    private val deviceRepository: DeviceRepository,
-    private val metaRepository: MetaRepository,
+    private val rackRepository: RackRepository,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -51,6 +55,8 @@ class RackDetailViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(RackDetailUiState())
     val state: StateFlow<RackDetailUiState> = _state.asStateFlow()
+
+    private var cached: RackElevationResponse? = null
 
     init {
         load()
@@ -60,50 +66,17 @@ class RackDetailViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(loading = true, error = null) }
             try {
-                val rack = metaRepository.racks(null).firstOrNull { it.id == rackId }
-                val devices = deviceRepository.listByRack(rackId).map { it.data }
-                val uHeight = rack?.uHeight ?: 42
-
-                val placed = devices.filter { it.position != null }
-                val unplaced = devices.filter { it.position == null }
-
-                // Unit → device occupying it. NetBox: position = lowest unit,
-                // the device grows upward by its u_height.
-                val byUnit = HashMap<Int, DeviceData>()
-                placed.forEach { d ->
-                    val bottom = d.position!!
-                    val span = (d.uHeight ?: 1).coerceAtLeast(1)
-                    (bottom until bottom + span).forEach { u -> byUnit.putIfAbsent(u, d) }
-                }
-
-                val rows = mutableListOf<RackRowItem>()
-                val rendered = HashSet<Int>()
-                var u = uHeight
-                while (u >= 1) {
-                    val d = byUnit[u]
-                    when {
-                        d == null -> {
-                            rows += RackRowItem.FreeUnit(u)
-                            u--
-                        }
-                        d.id in rendered -> u--
-                        else -> {
-                            val bottom = d.position!!.coerceAtLeast(1)
-                            rows += RackRowItem.DeviceBlock(d, topUnit = u, span = (u - bottom + 1).coerceAtLeast(1))
-                            rendered += d.id
-                            u = bottom - 1
-                        }
-                    }
-                }
-
+                val resp = rackRepository.elevation(rackId)
+                cached = resp
                 _state.update {
                     it.copy(
                         loading = false,
-                        rackName = rack?.name ?: "Стойка $rackId",
-                        uHeight = uHeight,
-                        occupiedUnits = byUnit.keys.count { unit -> unit in 1..uHeight },
-                        rows = rows,
-                        unplaced = unplaced,
+                        rackName = resp.rack.name,
+                        uHeight = resp.rack.uHeight,
+                        occupiedUnits = resp.occupiedUnits,
+                        unpositionedCount = resp.unpositionedCount,
+                        hasRear = resp.devices.any { d -> d.face.equals("rear", ignoreCase = true) },
+                        rows = buildRows(resp, it.face),
                     )
                 }
             } catch (e: ApiException) {
@@ -119,5 +92,53 @@ class RackDetailViewModel @Inject constructor(
                 _state.update { it.copy(loading = false, error = e.message) }
             }
         }
+    }
+
+    fun selectFace(face: RackFace) {
+        if (face == _state.value.face) return
+        val resp = cached ?: return
+        _state.update { it.copy(face = face, rows = buildRows(resp, face)) }
+    }
+
+    private fun buildRows(resp: RackElevationResponse, face: RackFace): List<RackRowItem> {
+        val uHeight = resp.rack.uHeight.coerceAtLeast(1)
+
+        // Devices on this face (face null → treated as front, the common case).
+        val faceDevices = resp.devices.filter { d ->
+            val f = d.face?.lowercase() ?: "front"
+            f == face.api
+        }
+        val byUnit = HashMap<Int, ElevationDevice>()
+        faceDevices.forEach { d ->
+            val bottom = (d.position ?: return@forEach).coerceAtLeast(1)
+            val span = d.uHeight.coerceAtLeast(1)
+            (bottom until bottom + span).forEach { u -> byUnit.putIfAbsent(u, d) }
+        }
+
+        val reservedUnit = HashMap<Int, String?>()
+        resp.reservations.forEach { r -> r.units.forEach { u -> reservedUnit.putIfAbsent(u, r.description) } }
+
+        val rows = mutableListOf<RackRowItem>()
+        val rendered = HashSet<Int>()
+        var u = uHeight
+        while (u >= 1) {
+            val d = byUnit[u]
+            when {
+                d != null && d.id in rendered -> u--
+                d != null -> {
+                    val bottom = (d.position ?: u).coerceAtLeast(1)
+                    rows += RackRowItem.DeviceBlock(d, topUnit = u, span = (u - bottom + 1).coerceAtLeast(1))
+                    rendered += d.id
+                    u = bottom - 1
+                }
+                reservedUnit.containsKey(u) -> {
+                    rows += RackRowItem.ReservedUnit(u, reservedUnit[u]); u--
+                }
+                else -> {
+                    rows += RackRowItem.FreeUnit(u); u--
+                }
+            }
+        }
+        return rows
     }
 }

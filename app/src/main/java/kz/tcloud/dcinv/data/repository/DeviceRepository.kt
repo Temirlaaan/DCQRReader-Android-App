@@ -25,20 +25,6 @@ class DeviceRepository @Inject constructor(
         deviceApi.search(name = query.ifBlank { null }, page = page)
     }
 
-    /** All devices mounted in (or assigned to) a rack — pages are merged. */
-    suspend fun listByRack(rackId: Int): List<DeviceResponse> {
-        val all = mutableListOf<DeviceResponse>()
-        var page = 1
-        while (true) {
-            val resp = apiCaller.call { deviceApi.search(rack = rackId, page = page, pageSize = 50) }
-            all += resp.results
-            // Safety cap: a rack physically holds < 100 devices.
-            if (!resp.hasMore || page >= 4) break
-            page++
-        }
-        return all
-    }
-
     suspend fun update(
         id: Int,
         body: JsonObject,
