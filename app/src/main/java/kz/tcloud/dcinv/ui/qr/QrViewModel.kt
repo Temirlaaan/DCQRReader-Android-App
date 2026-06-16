@@ -21,7 +21,13 @@ import javax.inject.Inject
 
 sealed interface QrUiState {
     data object Loading : QrUiState
-    data class Success(val result: QrLookupResponse) : QrUiState
+
+    /**
+     * [fallbackDeviceName] is resolved from the QR's bound device id when the
+     * lookup couldn't embed the device itself, so the UI can name it instead of
+     * showing a bare numeric id.
+     */
+    data class Success(val result: QrLookupResponse, val fallbackDeviceName: String? = null) : QrUiState
 
     /** 404 — QR not in the registry. */
     data class NotRegistered(val qrId: String) : QrUiState
@@ -162,7 +168,16 @@ class QrViewModel @Inject constructor(
             _state.value = try {
                 val result = repository.lookup(qrId)
                 scanHistory.record(qrId, result.device?.name)
-                QrUiState.Success(result)
+                // Bound but the device wasn't embedded: resolve its name by id so
+                // the screen shows a name, not a number.
+                val fallbackName = if (result.device == null) {
+                    result.qr.boundToDeviceId?.let { id ->
+                        runCatching { deviceRepository.get(id).data.name }.getOrNull()
+                    }
+                } else {
+                    null
+                }
+                QrUiState.Success(result, fallbackName)
             } catch (e: ApiException) {
                 if (e.httpCode == 404) {
                     QrUiState.NotRegistered(qrId)

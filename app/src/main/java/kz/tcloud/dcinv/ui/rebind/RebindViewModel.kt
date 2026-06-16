@@ -70,7 +70,12 @@ class RebindViewModel @Inject constructor(
                 if (shiftGate.trip(e) { rebind(device, reason) }) {
                     _state.update { it.copy(rebinding = false) }
                 } else {
-                    _state.update { it.copy(rebinding = false, error = e.userMessage()) }
+                    val msg = if (e.code == "DEVICE_ALREADY_BOUND") {
+                        "У устройства «${device.data.name}» уже есть метка"
+                    } else {
+                        e.userMessage()
+                    }
+                    _state.update { it.copy(rebinding = false, error = msg) }
                 }
             } catch (e: CancellationException) {
                 throw e

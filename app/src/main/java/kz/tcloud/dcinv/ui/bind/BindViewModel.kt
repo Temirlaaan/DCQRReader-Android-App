@@ -65,7 +65,12 @@ class BindViewModel @Inject constructor(
                 if (shiftGate.trip(e) { bind(device) }) {
                     _state.update { it.copy(binding = false) }
                 } else {
-                    _state.update { it.copy(binding = false, error = e.userMessage()) }
+                    val msg = if (e.code == "DEVICE_ALREADY_BOUND") {
+                        "У устройства «${device.data.name}» уже есть метка"
+                    } else {
+                        e.userMessage()
+                    }
+                    _state.update { it.copy(binding = false, error = msg) }
                 }
             } catch (e: CancellationException) {
                 throw e

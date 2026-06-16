@@ -178,6 +178,7 @@ fun QrResultScreen(
                 )
                 is QrUiState.Success -> QrContent(
                     result = s.result,
+                    fallbackDeviceName = s.fallbackDeviceName,
                     onBind = { onBind(viewModel.qrId) },
                     onCreate = { onCreate(viewModel.qrId) },
                 )
@@ -334,10 +335,25 @@ private fun CommentDialog(
 }
 
 @Composable
-private fun QrContent(result: QrLookupResponse, onBind: () -> Unit, onCreate: () -> Unit) {
+private fun QrContent(
+    result: QrLookupResponse,
+    fallbackDeviceName: String?,
+    onBind: () -> Unit,
+    onCreate: () -> Unit,
+) {
     when (result.qr.status) {
         QrStatus.FREE -> FreeQr(onBind = onBind, onCreate = onCreate)
-        QrStatus.BOUND -> DeviceProfile(result.device)
+        QrStatus.BOUND ->
+            if (result.device != null) {
+                DeviceProfile(result.device)
+            } else {
+                CenteredInfo(
+                    title = "Данные устройства недоступны",
+                    body = fallbackDeviceName
+                        ?.let { "Метка привязана к устройству «$it», но его данные сейчас не получены." }
+                        ?: "Метка привязана, но данные устройства не получены.",
+                )
+            }
         QrStatus.RETIRED -> CenteredInfo(
             title = "QR списан",
             body = buildString {
