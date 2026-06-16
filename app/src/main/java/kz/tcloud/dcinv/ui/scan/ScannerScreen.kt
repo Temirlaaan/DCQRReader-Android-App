@@ -73,6 +73,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import kz.tcloud.dcinv.domain.QrFormat
 import kz.tcloud.dcinv.scanner.QrCodeAnalyzer
+import kz.tcloud.dcinv.util.ScanFeedback
 import java.util.concurrent.Executors
 
 private val FRAME_SIZE = 250.dp
@@ -385,7 +386,10 @@ private fun CameraPreview(
                                 val main = ContextCompat.getMainExecutor(ctx)
                                 if (QrFormat.isValid(code)) {
                                     handled.value = true
-                                    main.execute { onQrScanned(code) }
+                                    main.execute {
+                                        ScanFeedback.success(ctx)
+                                        onQrScanned(code)
+                                    }
                                 } else {
                                     main.execute { onMessage("Этот QR не относится к системе") }
                                 }
