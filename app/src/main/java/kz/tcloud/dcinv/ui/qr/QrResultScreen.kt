@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Comment
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -78,10 +79,12 @@ fun QrResultScreen(
     val message by viewModel.message.collectAsStateWithLifecycle()
     val commentSubmitting by viewModel.commentSubmitting.collectAsStateWithLifecycle()
     val decommissioning by viewModel.decommissioning.collectAsStateWithLifecycle()
+    val unbinding by viewModel.unbinding.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var menuOpen by remember { mutableStateOf(false) }
     var commentOpen by remember { mutableStateOf(false) }
     var decommissionOpen by remember { mutableStateOf(false) }
+    var unbindOpen by remember { mutableStateOf(false) }
     val isBound = (state as? QrUiState.Success)?.result?.qr?.status == QrStatus.BOUND
 
     LaunchedEffect(message) {
@@ -124,6 +127,11 @@ fun QrResultScreen(
                                     text = { Text("Перепривязать метку") },
                                     leadingIcon = { Icon(Icons.Filled.SwapHoriz, contentDescription = null) },
                                     onClick = { menuOpen = false; onRebind(viewModel.qrId) },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Отвязать метку") },
+                                    leadingIcon = { Icon(Icons.Filled.LinkOff, contentDescription = null) },
+                                    onClick = { menuOpen = false; unbindOpen = true },
                                 )
                                 DropdownMenuItem(
                                     text = { Text("Списать устройство", color = MaterialTheme.colorScheme.error) },
@@ -193,7 +201,59 @@ fun QrResultScreen(
         )
     }
 
+    if (unbindOpen) {
+        ReasonDialog(
+            title = "Отвязать метку?",
+            body = "Метка станет свободной и её можно будет привязать к другому устройству. " +
+                "Укажите причину — она попадёт в журнал.",
+            confirmText = "Отвязать",
+            submittingText = "Отвязка…",
+            submitting = unbinding,
+            onDismiss = { unbindOpen = false },
+            onConfirm = { reason -> viewModel.unbind(reason) { unbindOpen = false } },
+        )
+    }
+
     ShiftRequiredDialog(viewModel.shiftGate)
+}
+
+/** Generic confirm dialog requiring a non-blank reason (audited actions). */
+@Composable
+private fun ReasonDialog(
+    title: String,
+    body: String,
+    confirmText: String,
+    submittingText: String,
+    submitting: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
+) {
+    var reason by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = { if (!submitting) onDismiss() },
+        title = { Text(title) },
+        text = {
+            Column {
+                Text(body)
+                androidx.compose.material3.OutlinedTextField(
+                    value = reason,
+                    onValueChange = { reason = it },
+                    label = { Text("Причина") },
+                    minLines = 2,
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                )
+            }
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(
+                onClick = { onConfirm(reason.trim()) },
+                enabled = reason.isNotBlank() && !submitting,
+            ) { Text(if (submitting) submittingText else confirmText) }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss, enabled = !submitting) { Text("Отмена") }
+        },
+    )
 }
 
 @Composable

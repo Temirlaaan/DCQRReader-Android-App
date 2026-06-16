@@ -5,6 +5,7 @@ import kz.tcloud.dcinv.data.network.api.QrApi
 import kz.tcloud.dcinv.data.network.dto.QrBindRequest
 import kz.tcloud.dcinv.data.network.dto.QrLookupResponse
 import kz.tcloud.dcinv.data.network.dto.QrRebindRequest
+import kz.tcloud.dcinv.data.network.dto.QrUnbindRequest
 import kz.tcloud.dcinv.data.network.idempotency.IdempotencyStore
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -36,6 +37,18 @@ class QrRepository @Inject constructor(
                 qrApi.rebind(
                     qrId = qrId,
                     body = QrRebindRequest(deviceId = deviceId, version = version, reason = reason),
+                    idempotencyKey = key,
+                )
+            }
+        }
+
+    /** Release a bound QR back to FREE; [version] is the current device's last_updated. */
+    suspend fun unbind(qrId: String, version: String, reason: String): QrLookupResponse =
+        idempotency.withKey("unbind:$qrId:$version") { key ->
+            apiCaller.call {
+                qrApi.unbind(
+                    qrId = qrId,
+                    body = QrUnbindRequest(version = version, reason = reason),
                     idempotencyKey = key,
                 )
             }

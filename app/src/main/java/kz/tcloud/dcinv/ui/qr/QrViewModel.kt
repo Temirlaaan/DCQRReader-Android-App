@@ -52,6 +52,9 @@ class QrViewModel @Inject constructor(
     private val _decommissioning = MutableStateFlow(false)
     val decommissioning: StateFlow<Boolean> = _decommissioning.asStateFlow()
 
+    private val _unbinding = MutableStateFlow(false)
+    val unbinding: StateFlow<Boolean> = _unbinding.asStateFlow()
+
     val shiftGate = ShiftGate(sessionRepository, viewModelScope) { msg -> _message.value = msg }
 
     /** Device id of the currently bound device, if any. */
@@ -112,6 +115,41 @@ class QrViewModel @Inject constructor(
                 _message.value = e.message ?: "Не удалось списать устройство"
             } finally {
                 _decommissioning.value = false
+            }
+        }
+    }
+
+    /**
+     * Release the metka back to FREE (BOUND → FREE) with a mandatory reason.
+     * Uses the current device's last_updated for optimistic concurrency; a
+     * DEVICE_CONFLICT means it changed underneath — reload so the user retries.
+     */
+    fun unbind(reason: String, onDone: () -> Unit) {
+        val device = (_state.value as? QrUiState.Success)?.result?.device ?: return
+        val version = device.lastUpdated.orEmpty()
+        viewModelScope.launch {
+            _unbinding.value = true
+            try {
+                repository.unbind(qrId, version, reason)
+                _message.value = "Метка отвязана"
+                onDone()
+                load()
+            } catch (e: ApiException) {
+                if (!shiftGate.trip(e) { unbind(reason, onDone) }) {
+                    _message.value = when (e.code) {
+                        "DEVICE_CONFLICT" -> "Устройство изменилось — данные обновлены, повторите"
+                        "QR_UNBIND_ROLLED_BACK" -> "Не удалось отвязать, попробуйте ещё раз"
+                        "QR_NOT_BOUND" -> "Метка уже не привязана"
+                        else -> e.apiError?.userMessage ?: e.apiError?.message ?: e.message
+                    }
+                    if (e.code == "DEVICE_CONFLICT") load()
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _message.value = e.message ?: "Не удалось отвязать метку"
+            } finally {
+                _unbinding.value = false
             }
         }
     }

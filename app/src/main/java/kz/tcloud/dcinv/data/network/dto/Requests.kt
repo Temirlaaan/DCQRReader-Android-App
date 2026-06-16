@@ -17,6 +17,13 @@ data class QrRebindRequest(
     val reason: String,
 )
 
+/** Release a bound QR back to FREE. `reason` is mandatory (audited). */
+@Serializable
+data class QrUnbindRequest(
+    val version: String,
+    val reason: String,
+)
+
 @Serializable
 data class AddCommentRequest(val comment: String)
 
