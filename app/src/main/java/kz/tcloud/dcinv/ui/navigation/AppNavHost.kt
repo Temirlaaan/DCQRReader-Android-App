@@ -127,11 +127,16 @@ fun AppNavHost(appViewModel: AppViewModel = hiltViewModel()) {
         composable(
             route = Routes.DEVICE_DETAIL,
             arguments = listOf(navArgument(Routes.DEVICE_ARG) { type = NavType.IntType }),
-        ) {
-            // Read-only by design: editing requires scanning the device's QR.
+        ) { entry ->
+            val reload by entry.savedStateHandle
+                .getStateFlow(Routes.RESULT_RELOAD, false)
+                .collectAsStateWithLifecycle()
             DeviceDetailScreen(
                 onBack = { navController.popBackStack() },
                 onScan = { navController.navigate(Routes.SCANNER) },
+                onEdit = { deviceId -> navController.navigate(Routes.editDevice(deviceId)) },
+                reloadSignal = reload,
+                onReloadHandled = { entry.savedStateHandle[Routes.RESULT_RELOAD] = false },
             )
         }
         composable(Routes.DEVICES) {
