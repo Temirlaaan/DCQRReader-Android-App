@@ -46,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
@@ -112,7 +113,8 @@ fun ReconcileScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(260.dp)
+                    .height(200.dp)
+                    .clipToBounds()
                     .background(Color.Black),
                 contentAlignment = Alignment.Center,
             ) {
@@ -293,7 +295,13 @@ private fun ReconcileCamera(onCode: (String) -> Unit) {
     AndroidView(
         modifier = Modifier.fillMaxSize(),
         factory = { ctx ->
-            val previewView = PreviewView(ctx).apply { scaleType = PreviewView.ScaleType.FILL_CENTER }
+            val previewView = PreviewView(ctx).apply {
+                scaleType = PreviewView.ScaleType.FILL_CENTER
+                // COMPATIBLE (TextureView) composites within Compose bounds and
+                // respects overlays; the default SurfaceView punches through and
+                // ignores clipping, which made the embedded preview look broken.
+                implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+            }
             val providerFuture = ProcessCameraProvider.getInstance(ctx)
             providerFuture.addListener({
                 val provider = providerFuture.get()

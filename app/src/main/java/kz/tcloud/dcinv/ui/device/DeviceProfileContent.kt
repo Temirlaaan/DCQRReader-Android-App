@@ -71,24 +71,17 @@ fun DeviceProfile(device: DeviceData?) {
             }
             Spacer(Modifier.height(8.dp))
             StatusChip(device.status.label)
-            device.qrId?.takeIf { it.isNotBlank() }?.let { qr ->
-                Spacer(Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Filled.QrCode2,
-                        contentDescription = null,
-                        tint = DcInvTheme.extra.secondaryText,
-                        modifier = Modifier.size(15.dp),
-                    )
-                    Text(
-                        "QR-метка: $qr",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontFamily = FontFamily.Monospace,
-                        color = DcInvTheme.extra.secondaryText,
-                        modifier = Modifier.padding(start = 6.dp),
-                    )
-                }
-            }
+        }
+
+        SectionCard(title = "QR-метка", icon = Icons.Filled.QrCode2) {
+            val qr = device.qrId?.takeIf { it.isNotBlank() }
+            Text(
+                text = qr ?: "Не привязана",
+                style = MaterialTheme.typography.bodyMedium,
+                fontFamily = if (qr != null) FontFamily.Monospace else FontFamily.Default,
+                fontWeight = FontWeight.SemiBold,
+                color = if (qr != null) MaterialTheme.colorScheme.onSurface else DcInvTheme.extra.secondaryText,
+            )
         }
 
         SectionCard(title = "Location", icon = Icons.Filled.LocationOn) {
