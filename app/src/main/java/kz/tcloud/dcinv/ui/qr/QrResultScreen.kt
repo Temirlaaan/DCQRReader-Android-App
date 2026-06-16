@@ -345,7 +345,8 @@ private fun QrContent(
         QrStatus.FREE -> FreeQr(onBind = onBind, onCreate = onCreate)
         QrStatus.BOUND ->
             if (result.device != null) {
-                DeviceProfile(result.device)
+                // The scanned QR is authoritative even if the device read omits qr_id.
+                DeviceProfile(result.device, knownQrId = result.qr.id)
             } else {
                 CenteredInfo(
                     title = "Данные устройства недоступны",

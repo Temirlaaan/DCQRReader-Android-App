@@ -34,15 +34,28 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonPrimitive
 import kz.tcloud.dcinv.data.network.dto.DeviceData
 import kz.tcloud.dcinv.ui.theme.DcInvTheme
 
 /**
+ * The device's QR tag, robust to where the backend put it: the device read may
+ * leave the top-level `qr_id` null while NetBox keeps it in `custom_fields`.
+ * On the scan screen the actually-scanned id is passed in and wins.
+ */
+private fun DeviceData.resolvedQrId(): String? =
+    qrId?.takeIf { it.isNotBlank() }
+        ?: customFields?.get("qr_id")?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }
+
+/**
  * Full device profile (header, location, hardware, network, comments).
  * Shared by the QR result screen and the rack-elevation device screen.
+ * [knownQrId] overrides the device's own field — used on the scan screen where
+ * the scanned QR is authoritative.
  */
 @Composable
-fun DeviceProfile(device: DeviceData?) {
+fun DeviceProfile(device: DeviceData?, knownQrId: String? = null) {
     if (device == null) {
         Column(
             modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -74,7 +87,7 @@ fun DeviceProfile(device: DeviceData?) {
         }
 
         SectionCard(title = "QR-метка", icon = Icons.Filled.QrCode2) {
-            val qr = device.qrId?.takeIf { it.isNotBlank() }
+            val qr = knownQrId?.takeIf { it.isNotBlank() } ?: device.resolvedQrId()
             Text(
                 text = qr ?: "Не привязана",
                 style = MaterialTheme.typography.bodyMedium,
