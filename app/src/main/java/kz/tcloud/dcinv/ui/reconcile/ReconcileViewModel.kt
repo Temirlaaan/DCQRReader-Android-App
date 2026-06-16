@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kz.tcloud.dcinv.data.network.ApiException
+import kz.tcloud.dcinv.data.network.userMessageOrNull
 import kz.tcloud.dcinv.data.repository.QrRepository
 import kz.tcloud.dcinv.data.repository.RackRepository
 import kotlin.coroutines.cancellation.CancellationException
@@ -85,7 +86,7 @@ class ReconcileViewModel @Inject constructor(
                 _state.update { it.copy(loading = false, rackName = resp.rack.name, expected = items) }
             } catch (e: ApiException) {
                 _state.update {
-                    it.copy(loading = false, error = e.apiError?.userMessage ?: e.apiError?.message ?: e.message)
+                    it.copy(loading = false, error = e.userMessageOrNull() ?: "Нет связи с сервером. Проверьте VPN")
                 }
             } catch (e: CancellationException) {
                 throw e

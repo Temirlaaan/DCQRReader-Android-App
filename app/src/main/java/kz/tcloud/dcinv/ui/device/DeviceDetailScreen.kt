@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kz.tcloud.dcinv.data.network.ApiException
+import kz.tcloud.dcinv.data.network.userMessageOrNull
 import kz.tcloud.dcinv.data.network.dto.DeviceData
 import kz.tcloud.dcinv.data.repository.DeviceRepository
 import kz.tcloud.dcinv.ui.theme.DcInvTheme
@@ -68,9 +69,7 @@ class DeviceDetailViewModel @Inject constructor(
             _state.value = try {
                 DeviceDetailState.Loaded(deviceRepository.get(deviceId).data)
             } catch (e: ApiException) {
-                DeviceDetailState.Error(
-                    e.apiError?.userMessage ?: e.apiError?.message ?: e.message ?: "Ошибка",
-                )
+                DeviceDetailState.Error(e.userMessageOrNull() ?: "Нет связи с сервером. Проверьте VPN")
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

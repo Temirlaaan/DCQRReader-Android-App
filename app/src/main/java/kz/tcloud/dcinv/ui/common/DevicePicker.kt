@@ -39,6 +39,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kz.tcloud.dcinv.data.network.ApiException
+import kz.tcloud.dcinv.data.network.userMessageOrNull
 import kz.tcloud.dcinv.data.network.dto.DeviceData
 import kz.tcloud.dcinv.data.network.dto.DeviceResponse
 import kz.tcloud.dcinv.data.prefs.PickerPreferences
@@ -184,8 +185,7 @@ class DevicePickerEngine(
         }
     }
 
-    private fun ApiException.userMessage(): String =
-        apiError?.userMessage ?: apiError?.message ?: message ?: "Ошибка"
+    private fun ApiException.userMessage(): String? = userMessageOrNull()
 
     private companion object {
         val ALL_SITES = Option("", "Все площадки")

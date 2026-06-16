@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kz.tcloud.dcinv.data.network.ApiException
+import kz.tcloud.dcinv.data.network.userMessageOrNull
 import kz.tcloud.dcinv.data.network.dto.SessionInfo
 import kz.tcloud.dcinv.data.repository.SessionRepository
 import kz.tcloud.dcinv.data.scan.ScanEntry
@@ -99,6 +100,5 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun ApiException.userMessage(): String =
-        apiError?.userMessage ?: apiError?.message ?: message ?: "Ошибка"
+    private fun ApiException.userMessage(): String? = userMessageOrNull()
 }

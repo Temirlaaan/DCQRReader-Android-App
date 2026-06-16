@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kz.tcloud.dcinv.data.network.ApiException
+import kz.tcloud.dcinv.data.network.userMessageOrNull
 import kz.tcloud.dcinv.data.network.dto.DeviceCreateRequest
 import kz.tcloud.dcinv.data.network.dto.DeviceResponse
 import kz.tcloud.dcinv.data.repository.DeviceRepository
@@ -93,7 +94,7 @@ class CreateDeviceViewModel @Inject constructor(
                     )
                 }
             } catch (e: ApiException) {
-                _state.update { it.copy(loading = false, loadError = e.userMessage()) }
+                _state.update { it.copy(loading = false, loadError = e.userMessage() ?: OFFLINE) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -136,9 +137,12 @@ class CreateDeviceViewModel @Inject constructor(
                 if (shiftGate.trip(e) { submit() }) {
                     _state.update { it.copy(saving = false, bindPending = createdDevice != null) }
                 } else {
+                    // Network errors → no snackbar (banner covers it); bindPending UI
+                    // already conveys "created, bind didn't go through".
                     val prefix = if (createdDevice != null) "Устройство создано, но привязка не удалась: " else ""
+                    val msg = e.userMessage()?.let { prefix + it }
                     _state.update {
-                        it.copy(saving = false, bindPending = createdDevice != null, error = prefix + e.userMessage())
+                        it.copy(saving = false, bindPending = createdDevice != null, error = msg)
                     }
                 }
             } catch (e: CancellationException) {
@@ -180,6 +184,9 @@ class CreateDeviceViewModel @Inject constructor(
 
     fun consumeError() = _state.update { it.copy(error = null) }
 
-    private fun ApiException.userMessage(): String =
-        apiError?.userMessage ?: apiError?.message ?: message ?: "Ошибка"
+    private fun ApiException.userMessage(): String? = userMessageOrNull()
+
+    private companion object {
+        const val OFFLINE = "Нет связи с сервером. Проверьте VPN"
+    }
 }

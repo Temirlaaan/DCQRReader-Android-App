@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kz.tcloud.dcinv.data.network.ApiException
+import kz.tcloud.dcinv.data.network.userMessageOrNull
 import kz.tcloud.dcinv.data.network.dto.DeviceResponse
 import kz.tcloud.dcinv.data.prefs.PickerPreferences
 import kz.tcloud.dcinv.data.repository.DeviceRepository
@@ -82,6 +83,5 @@ class BindViewModel @Inject constructor(
 
     fun consumeError() = _state.update { it.copy(error = null) }
 
-    private fun ApiException.userMessage(): String =
-        apiError?.userMessage ?: apiError?.message ?: message ?: "Ошибка"
+    private fun ApiException.userMessage(): String? = userMessageOrNull()
 }

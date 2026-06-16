@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kz.tcloud.dcinv.data.network.ApiException
+import kz.tcloud.dcinv.data.network.userMessageOrNull
 import kz.tcloud.dcinv.data.network.dto.MetaRack
 import kz.tcloud.dcinv.data.network.dto.MetaSite
 import kz.tcloud.dcinv.data.repository.MetaRepository
@@ -46,7 +47,7 @@ class RacksViewModel @Inject constructor(
                     it.copy(loading = false, sites = sites, selectedSiteId = siteId, racks = racks)
                 }
             } catch (e: ApiException) {
-                _state.update { it.copy(loading = false, error = e.userMessage()) }
+                _state.update { it.copy(loading = false, error = e.userMessage() ?: OFFLINE) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -64,7 +65,7 @@ class RacksViewModel @Inject constructor(
                 val racks = metaRepository.racks(siteId).forSite(siteId)
                 _state.update { it.copy(loading = false, racks = racks) }
             } catch (e: ApiException) {
-                _state.update { it.copy(loading = false, error = e.userMessage()) }
+                _state.update { it.copy(loading = false, error = e.userMessage() ?: OFFLINE) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -73,12 +74,17 @@ class RacksViewModel @Inject constructor(
         }
     }
 
-    private fun ApiException.userMessage(): String =
-        apiError?.userMessage ?: apiError?.message ?: message ?: "Ошибка"
+    private fun ApiException.userMessage(): String? = userMessageOrNull()
 
     /**
      * Defensive site filter: the backend's `/meta/racks?site_id=` returned racks
      * from other sites, so we also filter client-side by [MetaRack.siteId].
      */
     private fun List<MetaRack>.forSite(siteId: Int) = filter { it.siteId == siteId }
+
+    private companion object {
+        // Full-screen error fallback — the list is empty, so unlike a snackbar it
+        // must say something even for a network failure (the banner repeats why).
+        const val OFFLINE = "Нет связи с сервером. Проверьте VPN"
+    }
 }

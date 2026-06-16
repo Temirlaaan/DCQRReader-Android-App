@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kz.tcloud.dcinv.data.network.ApiException
+import kz.tcloud.dcinv.data.network.userMessageOrNull
 import kz.tcloud.dcinv.data.network.dto.ElevationDevice
 import kz.tcloud.dcinv.data.network.dto.RackElevationResponse
 import kz.tcloud.dcinv.data.repository.RackRepository
@@ -83,7 +84,7 @@ class RackDetailViewModel @Inject constructor(
                 _state.update {
                     it.copy(
                         loading = false,
-                        error = e.apiError?.userMessage ?: e.apiError?.message ?: e.message ?: "Ошибка",
+                        error = e.userMessageOrNull() ?: "Нет связи с сервером. Проверьте VPN",
                     )
                 }
             } catch (e: CancellationException) {

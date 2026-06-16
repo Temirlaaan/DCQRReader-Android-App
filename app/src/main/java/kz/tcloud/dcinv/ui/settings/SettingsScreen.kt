@@ -67,6 +67,7 @@ import kz.tcloud.dcinv.data.auth.AuthManager
 import kz.tcloud.dcinv.data.auth.IdTokenClaims
 import kz.tcloud.dcinv.data.auth.parseIdTokenClaims
 import kz.tcloud.dcinv.data.network.ApiException
+import kz.tcloud.dcinv.data.network.userMessageOrNull
 import kz.tcloud.dcinv.data.network.dto.SessionInfo
 import kz.tcloud.dcinv.data.prefs.ThemeMode
 import kz.tcloud.dcinv.data.prefs.ThemePreferences
@@ -160,8 +161,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    private fun ApiException.userMessage(): String =
-        apiError?.userMessage ?: apiError?.message ?: message ?: "Ошибка"
+    private fun ApiException.userMessage(): String? = userMessageOrNull()
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

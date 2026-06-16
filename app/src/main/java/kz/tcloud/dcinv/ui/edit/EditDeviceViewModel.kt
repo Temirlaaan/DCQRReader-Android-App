@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kz.tcloud.dcinv.data.network.ApiException
+import kz.tcloud.dcinv.data.network.userMessageOrNull
 import kz.tcloud.dcinv.data.network.dto.FormField
 import kz.tcloud.dcinv.data.repository.DeviceRepository
 import kz.tcloud.dcinv.data.repository.MetaRepository
@@ -175,8 +176,7 @@ class EditDeviceViewModel @Inject constructor(
 
     fun consumeError() = _state.update { it.copy(error = null) }
 
-    private fun ApiException.userMessage(): String =
-        apiError?.userMessage ?: apiError?.message ?: message ?: "Ошибка"
+    private fun ApiException.userMessage(): String? = userMessageOrNull()
 
     private companion object {
         val SUPPORTED_KEYS = setOf(

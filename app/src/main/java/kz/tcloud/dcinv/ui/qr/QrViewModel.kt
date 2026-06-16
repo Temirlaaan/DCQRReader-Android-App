@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kz.tcloud.dcinv.data.network.ApiException
+import kz.tcloud.dcinv.data.network.userMessageOrNull
 import kz.tcloud.dcinv.data.network.dto.QrLookupResponse
 import kz.tcloud.dcinv.data.repository.DeviceRepository
 import kz.tcloud.dcinv.data.repository.QrRepository
@@ -81,7 +82,7 @@ class QrViewModel @Inject constructor(
                 onDone()
             } catch (e: ApiException) {
                 if (!shiftGate.trip(e) { submitComment(text, onDone) }) {
-                    _message.value = e.apiError?.userMessage ?: e.apiError?.message ?: e.message
+                    _message.value = e.userMessageOrNull()
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -110,9 +111,10 @@ class QrViewModel @Inject constructor(
                 load()
             } catch (e: ApiException) {
                 if (!shiftGate.trip(e) { decommission(reason, onDone) }) {
-                    _message.value = when (e.httpCode) {
-                        403 -> "Списание доступно только администраторам"
-                        else -> e.apiError?.userMessage ?: e.apiError?.message ?: e.message
+                    _message.value = when {
+                        e.isNetworkError -> null
+                        e.httpCode == 403 -> "Списание доступно только администраторам"
+                        else -> e.userMessageOrNull()
                     }
                 }
             } catch (e: CancellationException) {
@@ -142,11 +144,12 @@ class QrViewModel @Inject constructor(
                 load()
             } catch (e: ApiException) {
                 if (!shiftGate.trip(e) { unbind(reason, onDone) }) {
-                    _message.value = when (e.code) {
-                        "DEVICE_CONFLICT" -> "Устройство изменилось — данные обновлены, повторите"
-                        "QR_UNBIND_ROLLED_BACK" -> "Не удалось отвязать, попробуйте ещё раз"
-                        "QR_NOT_BOUND" -> "Метка уже не привязана"
-                        else -> e.apiError?.userMessage ?: e.apiError?.message ?: e.message
+                    _message.value = when {
+                        e.isNetworkError -> null
+                        e.code == "DEVICE_CONFLICT" -> "Устройство изменилось — данные обновлены, повторите"
+                        e.code == "QR_UNBIND_ROLLED_BACK" -> "Не удалось отвязать, попробуйте ещё раз"
+                        e.code == "QR_NOT_BOUND" -> "Метка уже не привязана"
+                        else -> e.userMessageOrNull()
                     }
                     if (e.code == "DEVICE_CONFLICT") load()
                 }
@@ -182,12 +185,7 @@ class QrViewModel @Inject constructor(
                 if (e.httpCode == 404) {
                     QrUiState.NotRegistered(qrId)
                 } else {
-                    QrUiState.Error(
-                        e.apiError?.userMessage
-                            ?: e.apiError?.message
-                            ?: e.message
-                            ?: "Не удалось получить данные QR",
-                    )
+                    QrUiState.Error(e.userMessageOrNull() ?: "Нет связи с сервером. Проверьте VPN")
                 }
             } catch (e: CancellationException) {
                 throw e

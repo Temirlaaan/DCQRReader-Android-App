@@ -14,4 +14,16 @@ class ApiException(
 
     /** Machine-readable backend code (e.g. VERSION_CONFLICT), if present. */
     val code: String? get() = apiError?.code
+
+    /** Connectivity/VPN failure — covered by the global offline banner. */
+    val isNetworkError: Boolean get() = httpCode == ApiCaller.HTTP_NETWORK_ERROR
 }
+
+/**
+ * Human-readable message for a snackbar, or null when it should be suppressed.
+ * Network errors return null: the persistent offline banner already explains
+ * them, so we don't also spam a red snackbar per failed action.
+ */
+fun ApiException.userMessageOrNull(): String? =
+    if (isNetworkError) null
+    else apiError?.userMessage ?: apiError?.message ?: message ?: "Ошибка"
