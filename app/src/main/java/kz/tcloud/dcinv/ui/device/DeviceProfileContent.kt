@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Comment
 import androidx.compose.material.icons.filled.Lan
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -29,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -61,7 +63,7 @@ fun DeviceProfile(device: DeviceData?) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // Data header: name + status chip.
+        // Data header: name + status chip + QR tag.
         Column {
             Text(device.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             device.deviceType?.let {
@@ -69,6 +71,24 @@ fun DeviceProfile(device: DeviceData?) {
             }
             Spacer(Modifier.height(8.dp))
             StatusChip(device.status.label)
+            device.qrId?.takeIf { it.isNotBlank() }?.let { qr ->
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Filled.QrCode2,
+                        contentDescription = null,
+                        tint = DcInvTheme.extra.secondaryText,
+                        modifier = Modifier.size(15.dp),
+                    )
+                    Text(
+                        "QR-метка: $qr",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontFamily = FontFamily.Monospace,
+                        color = DcInvTheme.extra.secondaryText,
+                        modifier = Modifier.padding(start = 6.dp),
+                    )
+                }
+            }
         }
 
         SectionCard(title = "Location", icon = Icons.Filled.LocationOn) {

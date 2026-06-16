@@ -20,9 +20,18 @@ class DeviceRepository @Inject constructor(
 ) {
     suspend fun get(id: Int): DeviceResponse = apiCaller.call { deviceApi.getDevice(id) }
 
-    suspend fun search(query: String, page: Int = 1): DeviceSearchResponse = apiCaller.call {
-        // Free-text search by name; the backend also supports asset_tag/serial/site/rack.
-        deviceApi.search(name = query.ifBlank { null }, page = page)
+    suspend fun search(
+        query: String? = null,
+        siteId: Int? = null,
+        rackId: Int? = null,
+        page: Int = 1,
+    ): DeviceSearchResponse = apiCaller.call {
+        deviceApi.search(
+            name = query?.ifBlank { null },
+            site = siteId,
+            rack = rackId,
+            page = page,
+        )
     }
 
     suspend fun update(
