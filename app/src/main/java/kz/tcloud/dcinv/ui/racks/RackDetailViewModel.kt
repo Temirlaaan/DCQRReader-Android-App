@@ -51,7 +51,7 @@ class RackDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
-    private val rackId: Int = checkNotNull(savedStateHandle["rackId"]) { "rackId nav arg missing" }
+    val rackId: Int = checkNotNull(savedStateHandle["rackId"]) { "rackId nav arg missing" }
 
     private val _state = MutableStateFlow(RackDetailUiState())
     val state: StateFlow<RackDetailUiState> = _state.asStateFlow()

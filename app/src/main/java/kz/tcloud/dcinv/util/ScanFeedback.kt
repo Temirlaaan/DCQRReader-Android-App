@@ -18,11 +18,17 @@ import android.os.VibratorManager
 object ScanFeedback {
 
     fun success(context: Context) {
-        vibrate(context)
-        beep()
+        vibrate(context, 60)
+        beep(ToneGenerator.TONE_PROP_BEEP, 150)
     }
 
-    private fun vibrate(context: Context) {
+    /** Distinct cue for a reconciliation mismatch: longer buzz + lower nack tone. */
+    fun warn(context: Context) {
+        vibrate(context, 200)
+        beep(ToneGenerator.TONE_PROP_NACK, 300)
+    }
+
+    private fun vibrate(context: Context, ms: Long) {
         val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager)?.defaultVibrator
         } else {
@@ -31,19 +37,19 @@ object ScanFeedback {
         } ?: return
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator.vibrate(VibrationEffect.createOneShot(60, VibrationEffect.DEFAULT_AMPLITUDE))
+            vibrator.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE))
         } else {
             @Suppress("DEPRECATION")
-            vibrator.vibrate(60)
+            vibrator.vibrate(ms)
         }
     }
 
-    private fun beep() {
+    private fun beep(tone: Int, durationMs: Int) {
         runCatching {
-            val tone = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 80)
-            tone.startTone(ToneGenerator.TONE_PROP_BEEP, 150)
+            val generator = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 80)
+            generator.startTone(tone, durationMs)
             // Release after the tone finishes; the generator holds an audio resource.
-            Handler(Looper.getMainLooper()).postDelayed({ tone.release() }, 250)
+            Handler(Looper.getMainLooper()).postDelayed({ generator.release() }, (durationMs + 100).toLong())
         }
     }
 }

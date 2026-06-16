@@ -19,6 +19,9 @@ object Routes {
     const val RACK_DETAIL = "rack/{$RACK_ARG}"
     fun rackDetail(rackId: Int): String = "rack/$rackId"
 
+    const val RECONCILE = "rack/{$RACK_ARG}/reconcile"
+    fun reconcile(rackId: Int): String = "rack/$rackId/reconcile"
+
     const val QR_ARG = "qrId"
     const val QR_RESULT = "qr/{$QR_ARG}"
 

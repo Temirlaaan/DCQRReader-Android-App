@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -55,6 +56,7 @@ private val UnitHeight = 28.dp
 fun RackDetailScreen(
     onBack: () -> Unit,
     onOpenDevice: (deviceId: Int) -> Unit,
+    onReconcile: (rackId: Int) -> Unit,
     viewModel: RackDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -79,6 +81,13 @@ fun RackDetailScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                    }
+                },
+                actions = {
+                    if (!state.loading && state.error == null) {
+                        IconButton(onClick = { onReconcile(viewModel.rackId) }) {
+                            Icon(Icons.Filled.Checklist, contentDescription = "Сверка")
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

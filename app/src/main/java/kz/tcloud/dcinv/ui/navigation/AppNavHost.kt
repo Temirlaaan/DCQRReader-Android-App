@@ -38,6 +38,7 @@ import kz.tcloud.dcinv.ui.qr.QrResultScreen
 import kz.tcloud.dcinv.ui.rebind.RebindDeviceScreen
 import kz.tcloud.dcinv.ui.racks.RackDetailScreen
 import kz.tcloud.dcinv.ui.racks.RacksScreen
+import kz.tcloud.dcinv.ui.reconcile.ReconcileScreen
 import kz.tcloud.dcinv.ui.scan.ScannerScreen
 import kz.tcloud.dcinv.ui.settings.SettingsScreen
 
@@ -109,6 +110,16 @@ fun AppNavHost(appViewModel: AppViewModel = hiltViewModel()) {
             arguments = listOf(navArgument(Routes.RACK_ARG) { type = NavType.IntType }),
         ) {
             RackDetailScreen(
+                onBack = { navController.popBackStack() },
+                onOpenDevice = { deviceId -> navController.navigate(Routes.deviceDetail(deviceId)) },
+                onReconcile = { rackId -> navController.navigate(Routes.reconcile(rackId)) },
+            )
+        }
+        composable(
+            route = Routes.RECONCILE,
+            arguments = listOf(navArgument(Routes.RACK_ARG) { type = NavType.IntType }),
+        ) {
+            ReconcileScreen(
                 onBack = { navController.popBackStack() },
                 onOpenDevice = { deviceId -> navController.navigate(Routes.deviceDetail(deviceId)) },
             )
