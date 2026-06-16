@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kz.tcloud.dcinv.data.network.ApiException
 import kz.tcloud.dcinv.data.network.dto.DeviceResponse
+import kz.tcloud.dcinv.data.prefs.PickerPreferences
 import kz.tcloud.dcinv.data.repository.DeviceRepository
 import kz.tcloud.dcinv.data.repository.MetaRepository
 import kz.tcloud.dcinv.data.repository.QrRepository
@@ -37,6 +38,7 @@ class RebindViewModel @Inject constructor(
     private val qrRepository: QrRepository,
     metaRepository: MetaRepository,
     sessionRepository: SessionRepository,
+    pickerPreferences: PickerPreferences,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -45,7 +47,7 @@ class RebindViewModel @Inject constructor(
     private val _state = MutableStateFlow(RebindUiState())
     val state: StateFlow<RebindUiState> = _state.asStateFlow()
 
-    val picker = DevicePickerEngine(metaRepository, deviceRepository, viewModelScope) { msg ->
+    val picker = DevicePickerEngine(metaRepository, deviceRepository, viewModelScope, pickerPreferences) { msg ->
         _state.update { it.copy(error = msg) }
     }
 

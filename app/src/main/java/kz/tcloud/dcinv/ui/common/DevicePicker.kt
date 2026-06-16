@@ -41,6 +41,7 @@ import kotlinx.coroutines.launch
 import kz.tcloud.dcinv.data.network.ApiException
 import kz.tcloud.dcinv.data.network.dto.DeviceData
 import kz.tcloud.dcinv.data.network.dto.DeviceResponse
+import kz.tcloud.dcinv.data.prefs.PickerPreferences
 import kz.tcloud.dcinv.data.repository.DeviceRepository
 import kz.tcloud.dcinv.data.repository.MetaRepository
 import kz.tcloud.dcinv.ui.theme.DcInvTheme
@@ -70,6 +71,7 @@ class DevicePickerEngine(
     private val metaRepository: MetaRepository,
     private val deviceRepository: DeviceRepository,
     private val scope: CoroutineScope,
+    private val prefs: PickerPreferences,
     private val onError: (String?) -> Unit,
 ) {
     private val _state = MutableStateFlow(DevicePickerState())
@@ -81,6 +83,24 @@ class DevicePickerEngine(
                 _state.update {
                     it.copy(sites = listOf(ALL_SITES) + sites.map { s -> Option(s.id.toString(), s.name) })
                 }
+                // Reopen on the rack the engineer last worked.
+                val lastSite = prefs.lastSiteId
+                if (lastSite.isNotBlank() && sites.any { s -> s.id.toString() == lastSite }) {
+                    restoreSite(lastSite, prefs.lastRackId)
+                }
+            }
+        }
+    }
+
+    private fun restoreSite(siteId: String, rackId: String) {
+        val id = siteId.toIntOrNull() ?: return
+        _state.update { it.copy(selectedSiteId = siteId) }
+        scope.launch {
+            runCatching { metaRepository.racks(id) }.onSuccess { racks ->
+                val options = racks.filter { r -> r.siteId == id }.map { r -> Option(r.id.toString(), r.name) }
+                val validRack = if (options.any { it.id == rackId }) rackId else ""
+                _state.update { it.copy(racks = listOf(ALL_RACKS) + options, selectedRackId = validRack) }
+                search()
             }
         }
     }
@@ -89,6 +109,8 @@ class DevicePickerEngine(
 
     fun selectSite(siteId: String) {
         _state.update { it.copy(selectedSiteId = siteId, selectedRackId = "", racks = emptyList()) }
+        prefs.lastSiteId = siteId
+        prefs.lastRackId = ""
         val id = siteId.toIntOrNull()
         if (id != null) {
             scope.launch {
@@ -105,6 +127,7 @@ class DevicePickerEngine(
 
     fun selectRack(rackId: String) {
         _state.update { it.copy(selectedRackId = rackId) }
+        prefs.lastRackId = rackId
         search()
     }
 
