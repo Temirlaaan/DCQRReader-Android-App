@@ -30,10 +30,10 @@ import kz.tcloud.dcinv.ui.bind.BindDeviceScreen
 import kz.tcloud.dcinv.ui.components.BottomNavIsland
 import kz.tcloud.dcinv.ui.create.CreateDeviceScreen
 import kz.tcloud.dcinv.ui.device.DeviceDetailScreen
+import kz.tcloud.dcinv.ui.devices.DevicesScreen
 import kz.tcloud.dcinv.ui.edit.EditDeviceScreen
 import kz.tcloud.dcinv.ui.home.HomeScreen
 import kz.tcloud.dcinv.ui.login.LoginScreen
-import kz.tcloud.dcinv.ui.profile.ProfileScreen
 import kz.tcloud.dcinv.ui.qr.QrResultScreen
 import kz.tcloud.dcinv.ui.rebind.RebindDeviceScreen
 import kz.tcloud.dcinv.ui.racks.RackDetailScreen
@@ -134,17 +134,19 @@ fun AppNavHost(appViewModel: AppViewModel = hiltViewModel()) {
                 onScan = { navController.navigate(Routes.SCANNER) },
             )
         }
-        composable(Routes.PROFILE) {
-            ProfileScreen(
+        composable(Routes.DEVICES) {
+            DevicesScreen(
+                onOpenDevice = { deviceId -> navController.navigate(Routes.deviceDetail(deviceId)) },
+            )
+        }
+        composable(Routes.SETTINGS) {
+            SettingsScreen(
                 onSignedOut = {
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(0) { inclusive = true }
                     }
                 },
             )
-        }
-        composable(Routes.SETTINGS) {
-            SettingsScreen()
         }
         composable(Routes.SCANNER) {
             ScannerScreen(

@@ -8,12 +8,12 @@ object Routes {
     const val LOGIN = "login"
     const val HOME = "home"
     const val RACKS = "racks"
-    const val PROFILE = "profile"
+    const val DEVICES = "devices"
     const val SETTINGS = "settings"
     const val SCANNER = "scanner"
 
     /** Top-level destinations that show the bottom-nav island. */
-    val TOP_LEVEL = setOf(HOME, RACKS, PROFILE, SETTINGS)
+    val TOP_LEVEL = setOf(HOME, RACKS, DEVICES, SETTINGS)
 
     const val RACK_ARG = "rackId"
     const val RACK_DETAIL = "rack/{$RACK_ARG}"
