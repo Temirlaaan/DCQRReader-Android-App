@@ -19,12 +19,17 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -36,7 +41,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,7 +67,6 @@ import kz.tcloud.dcinv.data.network.dto.DeviceData
 import kz.tcloud.dcinv.data.network.dto.DeviceResponse
 import kz.tcloud.dcinv.data.repository.DeviceRepository
 import kz.tcloud.dcinv.data.repository.MetaRepository
-import kz.tcloud.dcinv.ui.common.DropdownField
 import kz.tcloud.dcinv.ui.common.Option
 import kz.tcloud.dcinv.ui.theme.DcInvTheme
 import kotlin.coroutines.cancellation.CancellationException
@@ -233,25 +239,24 @@ fun DevicesScreen(
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             ) {
-                Box(Modifier.weight(1f)) {
-                    DropdownField(
-                        label = "Площадка",
-                        value = state.selectedSiteId,
-                        options = state.sites,
-                        onChange = viewModel::selectSite,
-                    )
-                }
-                Box(Modifier.weight(1f)) {
-                    DropdownField(
-                        label = "Стойка",
-                        value = state.selectedRackId,
-                        options = state.racks,
-                        onChange = viewModel::selectRack,
-                    )
-                }
+                FilterChipDropdown(
+                    placeholder = "Площадка",
+                    selectedId = state.selectedSiteId,
+                    options = state.sites,
+                    onSelect = viewModel::selectSite,
+                    modifier = Modifier.weight(1f),
+                )
+                FilterChipDropdown(
+                    placeholder = "Стойка",
+                    selectedId = state.selectedRackId,
+                    options = state.racks,
+                    enabled = state.selectedSiteId.isNotBlank(),
+                    onSelect = viewModel::selectRack,
+                    modifier = Modifier.weight(1f),
+                )
             }
             OutlinedTextField(
                 value = state.query,
@@ -291,6 +296,60 @@ fun DevicesScreen(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Compact filter as a chip that shows the selection (or a placeholder) and opens
+ * a dropdown — lighter than a full text field, and highlights when active.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FilterChipDropdown(
+    placeholder: String,
+    selectedId: String,
+    options: List<Option>,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selected = options.firstOrNull { it.id == selectedId && it.id.isNotBlank() }
+    val active = selected != null
+
+    Box(modifier = modifier) {
+        FilterChip(
+            selected = active,
+            enabled = enabled,
+            onClick = { expanded = true },
+            label = {
+                Text(
+                    selected?.label ?: placeholder,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            },
+            trailingIcon = {
+                Icon(Icons.Filled.ArrowDropDown, contentDescription = null, modifier = Modifier.size(18.dp))
+            },
+            colors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                selectedLabelColor = MaterialTheme.colorScheme.primary,
+                selectedTrailingIconColor = MaterialTheme.colorScheme.primary,
+            ),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { opt ->
+                DropdownMenuItem(
+                    text = { Text(opt.label) },
+                    onClick = {
+                        expanded = false
+                        onSelect(opt.id)
+                    },
+                )
             }
         }
     }
