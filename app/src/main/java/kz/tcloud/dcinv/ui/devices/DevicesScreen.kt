@@ -59,12 +59,19 @@ import kz.tcloud.dcinv.data.network.ApiException
 import kz.tcloud.dcinv.data.network.dto.DeviceData
 import kz.tcloud.dcinv.data.network.dto.DeviceResponse
 import kz.tcloud.dcinv.data.repository.DeviceRepository
+import kz.tcloud.dcinv.data.repository.MetaRepository
+import kz.tcloud.dcinv.ui.common.DropdownField
+import kz.tcloud.dcinv.ui.common.Option
 import kz.tcloud.dcinv.ui.theme.DcInvTheme
 import kotlin.coroutines.cancellation.CancellationException
 import javax.inject.Inject
 
 data class DevicesUiState(
     val query: String = "",
+    val sites: List<Option> = emptyList(),
+    val racks: List<Option> = emptyList(),
+    val selectedSiteId: String = "",
+    val selectedRackId: String = "",
     val loading: Boolean = false,
     val loadingMore: Boolean = false,
     val results: List<DeviceResponse> = emptyList(),
@@ -82,20 +89,63 @@ data class DevicesUiState(
 @HiltViewModel
 class DevicesViewModel @Inject constructor(
     private val deviceRepository: DeviceRepository,
+    private val metaRepository: MetaRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DevicesUiState())
     val state: StateFlow<DevicesUiState> = _state.asStateFlow()
 
+    init {
+        loadSites()
+    }
+
+    private fun loadSites() {
+        viewModelScope.launch {
+            runCatching { metaRepository.sites() }.onSuccess { sites ->
+                _state.update {
+                    it.copy(sites = listOf(ALL_SITES) + sites.map { s -> Option(s.id.toString(), s.name) })
+                }
+            }
+        }
+    }
+
     fun onQueryChange(q: String) = _state.update { it.copy(query = q) }
 
+    fun selectSite(siteId: String) {
+        _state.update { it.copy(selectedSiteId = siteId, selectedRackId = "", racks = emptyList()) }
+        val id = siteId.toIntOrNull()
+        if (id != null) {
+            viewModelScope.launch {
+                runCatching { metaRepository.racks(id) }.onSuccess { racks ->
+                    _state.update {
+                        it.copy(racks = listOf(ALL_RACKS) + racks.filter { r -> r.siteId == id }
+                            .map { r -> Option(r.id.toString(), r.name) })
+                    }
+                }
+            }
+            search()
+        }
+    }
+
+    fun selectRack(rackId: String) {
+        _state.update { it.copy(selectedRackId = rackId) }
+        search()
+    }
+
     fun search() {
-        val q = _state.value.query.trim()
-        if (q.isBlank()) return
+        val s = _state.value
+        val q = s.query.trim()
+        // Don't list the whole DC: require a query or at least a site.
+        if (q.isBlank() && s.selectedSiteId.isBlank()) return
         viewModelScope.launch {
             _state.update { it.copy(loading = true, error = null, searched = true) }
             try {
-                val resp = deviceRepository.search(query = q, page = 1)
+                val resp = deviceRepository.search(
+                    query = q,
+                    siteId = s.selectedSiteId.toIntOrNull(),
+                    rackId = s.selectedRackId.toIntOrNull(),
+                    page = 1,
+                )
                 _state.update {
                     it.copy(loading = false, results = resp.results, page = 1, hasMore = resp.hasMore)
                 }
@@ -116,7 +166,12 @@ class DevicesViewModel @Inject constructor(
             _state.update { it.copy(loadingMore = true) }
             try {
                 val next = s.page + 1
-                val resp = deviceRepository.search(query = s.query.trim(), page = next)
+                val resp = deviceRepository.search(
+                    query = s.query.trim(),
+                    siteId = s.selectedSiteId.toIntOrNull(),
+                    rackId = s.selectedRackId.toIntOrNull(),
+                    page = next,
+                )
                 _state.update {
                     it.copy(
                         loadingMore = false,
@@ -137,6 +192,11 @@ class DevicesViewModel @Inject constructor(
 
     private fun ApiException.userMessage(): String =
         apiError?.userMessage ?: apiError?.message ?: message ?: "Ошибка"
+
+    private companion object {
+        val ALL_SITES = Option("", "Все площадки")
+        val ALL_RACKS = Option("", "Все стойки")
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -172,6 +232,27 @@ fun DevicesScreen(
         },
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            ) {
+                Box(Modifier.weight(1f)) {
+                    DropdownField(
+                        label = "Площадка",
+                        value = state.selectedSiteId,
+                        options = state.sites,
+                        onChange = viewModel::selectSite,
+                    )
+                }
+                Box(Modifier.weight(1f)) {
+                    DropdownField(
+                        label = "Стойка",
+                        value = state.selectedRackId,
+                        options = state.racks,
+                        onChange = viewModel::selectRack,
+                    )
+                }
+            }
             OutlinedTextField(
                 value = state.query,
                 onValueChange = viewModel::onQueryChange,
@@ -184,13 +265,13 @@ fun DevicesScreen(
                 },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { viewModel.search() }),
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
             )
 
             Box(modifier = Modifier.fillMaxSize()) {
                 when {
                     state.loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                    !state.searched -> Hint("Введите запрос, чтобы найти устройство")
+                    !state.searched -> Hint("Выберите площадку/стойку или введите запрос")
                     state.results.isEmpty() -> Hint("Ничего не найдено")
                     else -> LazyColumn(
                         state = listState,
